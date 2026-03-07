@@ -2,6 +2,7 @@ import { useState } from "react";
 import { T } from "../constants/theme";
 import { GRAMMAR } from "../constants/grammar";
 import { speakSv } from "../services/api";
+import { SvFlag } from "../components/SvFlag";
 
 export default function GrammarPage({ onBack }) {
     const [expanded, setExpanded] = useState(null);
@@ -11,11 +12,11 @@ export default function GrammarPage({ onBack }) {
                 <button className="btn btn-s" style={{ fontSize: 12, padding: "5px 12px" }} onClick={onBack}>
                     ← Trang chủ
                 </button>
-                <div className="sec-title" style={{ marginBottom: 0 }}>✏️ Ngữ pháp</div>
+                <div className="sec-title">✏️ Ngữ pháp</div>
             </div>
             <div className="card card-g" style={{ padding: "11px 14px", marginBottom: 14 }}>
-                <div style={{ fontSize: 13, color: T.textL, lineHeight: 1.65 }}>
-                    Tiếng Thụy Điển thuộc nhóm North Germanic, gần với Na Uy và Đan Mạch. {GRAMMAR.length} chủ điểm ngữ pháp từ cơ bản đến nâng cao. 🌟
+                <div style={{ fontSize: 13, color: T.textL, lineHeight: 1.65, display: "flex", alignItems: "center", gap: 6 }}>
+                    <SvFlag size={14} /> Tiếng Thụy Điển thuộc nhóm North Germanic... {GRAMMAR.length} chủ điểm.
                 </div>
             </div>
 
@@ -55,10 +56,12 @@ export default function GrammarPage({ onBack }) {
                             {g.examples &&
                                 g.examples.map((ex, i) => (
                                     <div key={i} className="ex-item">
-                                        <div className="ex-sv" style={{ cursor: "pointer" }} onClick={() => speakSv(ex.sv)}>
-                                            {ex.sv} <span style={{ fontSize: 12 }}>🔊</span>
+                                        <div className="ex-sv" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} onClick={() => speakSv(ex.sv)}>
+                                            <SvFlag size={14} /> {ex.sv} <span style={{ fontSize: 12 }}>🔊</span>
                                         </div>
-                                        <div className="ex-vi">{ex.vi}</div>
+                                        <div className="ex-vi" style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.9 }}>
+                                            <VnFlag size={14} /> {ex.vi}
+                                        </div>
                                     </div>
                                 ))}
                         </div>

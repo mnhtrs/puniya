@@ -1,10 +1,14 @@
+const DB_VER = 3;
 export function dbOpen() {
     return new Promise((resolve, reject) => {
-        const req = indexedDB.open("puniya_db", 2);
+        const req = indexedDB.open("puniya_db", DB_VER);
         req.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains("vocab")) {
                 db.createObjectStore("vocab", { keyPath: "id", autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains("tags")) {
+                db.createObjectStore("tags", { keyPath: "id", autoIncrement: true });
             }
         };
         req.onsuccess = (e) => resolve(e.target.result);

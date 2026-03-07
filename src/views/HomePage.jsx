@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { T, getCatColor } from "../constants/theme";
 import { speakSv } from "../services/api";
+import { SvFlag } from "../components/SvFlag";
+import { VnFlag } from "../components/VnFlag";
 import DictPage from "./DictPage";
 import ReviewPage from "./ReviewPage";
 import FlashcardPage from "./FlashcardPage";
@@ -18,14 +20,24 @@ const SAMPLE_WORDS = [
 ];
 
 export default function HomePage({ vocab, setVocab, streak, goHome }) {
-    const today = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
     const [sec, setSec] = useState("home");
     const [dailyWord, setDailyWord] = useState(null);
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const timeStr = time.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const dateStr = time.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const svMonth = ["januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september", "oktober", "november", "december"][time.getMonth()];
+    const clockAndDate = `Klockan är ${timeStr}, den ${time.getDate()} ${svMonth} ${time.getFullYear()} (${dateStr})`;
 
     useEffect(() => {
         function pick() {
             if (!vocab.length) {
-                setDailyWord(SAMPLE_WORDS[Math.floor(Date.now() / 300000) % SAMPLE_WORDS.length]);
+                setDailyWord(null);
                 return;
             }
             const minLvl = Math.min(...vocab.map((v) => v.srsLevel || 0));
@@ -37,8 +49,8 @@ export default function HomePage({ vocab, setVocab, streak, goHome }) {
         return () => clearInterval(t);
     }, [vocab]);
 
-    const SRS_COLORS = ["#9ca3af", "#ec4899", "#f59e0b", "#3b82f6", "#22c55e"];
-    const SRS_LABELS = ["Mới", "Đang học", "Quen", "Thành thạo", "Thuộc"];
+    const SRS_COLORS = ["#94a3b8", "#f472b6", "#fbbf24", "#60a5fa", "#34d399"];
+    const SRS_LABELS = ["Chưa học", "Đang học", "Đang thuộc", "Đã thuộc", "Thành thạo"];
     const srsCount = [0, 1, 2, 3, 4].map((lvl) => vocab.filter((v) => (v.srsLevel || 0) === lvl).length);
     const total = vocab.length;
 
@@ -55,142 +67,102 @@ export default function HomePage({ vocab, setVocab, streak, goHome }) {
 
     return (
         <div className="main">
-            <div className="card card-g">
-                <div style={{ fontSize: 12, color: T.textL, fontWeight: 600, marginBottom: 3 }}>{today}</div>
-                <div style={{ fontSize: 20, fontWeight: 900 }}>Chào mừng trở lại! 🌸</div>
-                <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                    <div style={{ fontSize: 13 }}>
-                        <strong>{total}</strong> <span style={{ color: T.textL }}>từ</span>
+            <div className="card card-g" style={{ padding: "20px 24px" }}>
+                <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Chào mừng trở lại! 🌸</div>
+                    <div style={{ fontSize: 13, color: T.text, fontWeight: 700, lineHeight: 1.7, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <SvFlag size={16} /> <span style={{ color: T.pink, fontWeight: 900 }}>{clockAndDate}</span>
                     </div>
-                    <div style={{ fontSize: 13 }}>
-                        🔥<strong>{streak}</strong>
-                    </div>
-                    <div style={{ fontSize: 13 }}>
-                        ⭐<strong>{vocab.filter((v) => v.starred).length}</strong>
-                    </div>
+                </div>
+                <div style={{ display: "flex", gap: 20, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+                    <div style={{ fontSize: 14 }}>🎯 <strong>{total}</strong> <span style={{ color: T.textL }}>từ đã lưu</span></div>
+                    <div style={{ fontSize: 14 }}>🔥 <strong>{streak}</strong> <span style={{ color: T.textL }}>ngày</span></div>
+                    <div style={{ fontSize: 14 }}>⭐ <strong>{vocab.filter((v) => v.starred).length}</strong> <span style={{ color: T.textL }}>yêu thích</span></div>
                 </div>
             </div>
 
-            <div className="card" style={{ padding: "14px 16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: T.text, letterSpacing: 0.3 }}>📊 Mức độ học thuộc</div>
-                    <div style={{ fontSize: 11, color: T.textL, fontWeight: 700 }}>{total} từ trong sổ</div>
+            <div className="card" style={{ padding: "18px 24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>📊 Thống kê tiến độ ghi nhớ</div>
+                    <div className="bdg bdg-pk" style={{ fontSize: 11 }}>{total} từ vựng</div>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 90, marginBottom: 10, padding: "0 4px" }}>
-                    {[1, 2, 3, 4].map((lvl) => {
+
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-end", height: 220, marginBottom: 12, padding: "0 5px" }}>
+                    {[0, 1, 2, 3, 4].map((lvl) => {
                         const count = srsCount[lvl];
                         const pct = total > 0 ? (count / total) * 100 : 0;
-                        const barH = total === 0 ? 3 : Math.max(pct * 0.82, count > 0 ? 8 : 3);
+                        const barH = total === 0 ? 4 : Math.max(pct * 1.1, count > 0 ? 12 : 4);
                         return (
-                            <div key={lvl} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
-                                <div style={{ fontSize: 12, fontWeight: 900, color: count > 0 ? SRS_COLORS[lvl] : "#d1d5db", minHeight: 18, textAlign: "center" }}>
-                                    {count > 0 ? count : "–"}
-                                </div>
+                            <div key={lvl} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end" }}>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: count > 0 ? SRS_COLORS[lvl] : "#94a3b8" }}>{count}</div>
                                 <div
                                     style={{
                                         width: "100%",
                                         height: barH,
-                                        background: count > 0 ? SRS_COLORS[lvl] : "#f3f4f6",
-                                        borderRadius: "6px 6px 0 0",
-                                        transition: "height .6s cubic-bezier(.4,0,.2,1)",
-                                        border: count === 0 ? `2px dashed #e5e7eb` : "none",
-                                        boxSizing: "border-box",
+                                        background: count > 0 ? SRS_COLORS[lvl] : "#f1f5f9",
+                                        borderRadius: "8px 8px 0 0",
+                                        transition: "height 0.8s ease-out",
+                                        boxShadow: count > 0 ? `0 4px 12px ${SRS_COLORS[lvl]}22` : "none",
+                                        border: count === 0 ? "2px dashed #e2e8f0" : "none",
+                                        boxSizing: "border-box"
                                     }}
                                 />
                             </div>
                         );
                     })}
                 </div>
-                <div style={{ display: "flex", gap: 8, padding: "0 4px" }}>
-                    {[1, 2, 3, 4].map((lvl) => (
-                        <div
-                            key={lvl}
-                            style={{
-                                flex: 1,
-                                textAlign: "center",
-                                fontSize: 10,
-                                fontWeight: 800,
-                                color: srsCount[lvl] > 0 ? SRS_COLORS[lvl] : "#9ca3af",
-                                lineHeight: 1.3,
-                                borderTop: `3px solid ${srsCount[lvl] > 0 ? SRS_COLORS[lvl] : "#e5e7eb"}`,
-                                paddingTop: 5,
-                            }}
-                        >
+
+                <div style={{ display: "flex", gap: 12 }}>
+                    {[0, 1, 2, 3, 4].map((lvl) => (
+                        <div key={lvl} style={{
+                            flex: 1, textAlign: "center", fontSize: 10, fontWeight: 800,
+                            color: srsCount[lvl] > 0 ? SRS_COLORS[lvl] : "#94a3b8",
+                            borderTop: `4px solid ${srsCount[lvl] > 0 ? SRS_COLORS[lvl] : "#f1f5f9"}`,
+                            paddingTop: 6, opacity: 0.9
+                        }}>
                             {SRS_LABELS[lvl]}
                         </div>
                     ))}
                 </div>
-                {total === 0 && (
-                    <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: T.textL, fontStyle: "italic" }}>
-                        Thêm từ vào sổ tay để xem thống kê học thuộc 👆
-                    </div>
-                )}
-                {srsCount[0] > 0 && total > 0 && (
-                    <div style={{ marginTop: 8, padding: "5px 10px", background: T.pinkP, borderRadius: 8, fontSize: 11, color: T.pink, fontWeight: 700, textAlign: "center" }}>
-                        ⚠️ {srsCount[0]} từ mới chưa ôn lần nào
-                    </div>
-                )}
             </div>
 
             {dailyWord && (
-                <div className="card" style={{ border: `2px solid ${T.pinkL}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 16 }}>💡</span>
-                            <div style={{ fontSize: 12, fontWeight: 900, color: T.pink, letterSpacing: 0.3 }}>
-                                {total === 0 ? "Từ mẫu hôm nay" : "Từ cần ôn hôm nay"}
+                <div className="card card-g" style={{ padding: "24px 30px", border: `2px solid ${T.pinkL}`, position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", right: -20, top: -20, opacity: 0.1, transform: "rotate(-15deg)", pointerEvents: "none" }}>
+                        <SvFlag size={120} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 20 }}>🌟</span>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: T.pink, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                                {total === 0 ? "Từ vựng (Ví dụ)" : "Hãy ôn tập từ này"}
                             </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            {total > 0 && (
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 800,
-                                        color: SRS_COLORS[dailyWord.srsLevel || 0],
-                                        background: SRS_COLORS[dailyWord.srsLevel || 0] + "22",
-                                        borderRadius: 20,
-                                        padding: "2px 8px",
-                                        border: `1px solid ${SRS_COLORS[dailyWord.srsLevel || 0]}44`,
-                                    }}
-                                >
-                                    {SRS_LABELS[dailyWord.srsLevel || 0]}
-                                </span>
-                            )}
-                            {total > 0 && (
-                                <div style={{ display: "flex", gap: 3 }}>
-                                    {[1, 2, 3, 4].map((lvl) => (
-                                        <div
-                                            key={lvl}
-                                            style={{
-                                                width: 12,
-                                                height: 5,
-                                                borderRadius: 3,
-                                                background: lvl <= (dailyWord.srsLevel || 0) ? SRS_COLORS[dailyWord.srsLevel || 0] : "#e5e7eb",
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        {total > 0 && (
+                            <div style={{ display: "flex", gap: 3 }}>
+                                {[1, 2, 3, 4].map((lvl) => (
+                                    <div key={lvl} style={{
+                                        width: 14, height: 6, borderRadius: 3,
+                                        background: lvl <= (dailyWord.srsLevel || 0) ? (dailyWord.srsLevel >= 4 ? "#22c55e" : "#ec4899") : "#e5e7eb"
+                                    }} />
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 32, fontWeight: 900, color: T.pink, lineHeight: 1.1, marginBottom: 4 }}>{dailyWord.sv}</div>
-                            {dailyWord.aiData?.ipa && (
-                                <code style={{ fontSize: 12, color: T.purple, background: T.purpleL, padding: "2px 8px", borderRadius: 6, display: "inline-block", marginBottom: 4, fontWeight: 700 }}>
-                                    {dailyWord.aiData.ipa}
-                                </code>
-                            )}
-                            {dailyWord.aiData?.pronunciation && (
-                                <div style={{ fontSize: 12, color: T.textL, marginBottom: 6, cursor: "pointer", fontWeight: 600 }} onClick={() => speakSv(dailyWord.sv)}>
-                                    🔊 /{dailyWord.aiData.pronunciation}/
-                                </div>
-                            )}
-                            <div style={{ fontSize: 17, color: T.text, fontWeight: 700, marginBottom: 4 }}>{dailyWord.vi}</div>
-                            {dailyWord.category && <span className="bdg bdg-pk">{dailyWord.category}</span>}
+                            <div style={{ fontSize: 48, fontWeight: 900, color: T.pink, lineHeight: 1.1, marginBottom: 8, letterSpacing: -1 }}>{dailyWord.sv}</div>
+                            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+                                {dailyWord.aiData?.pronunciation && (
+                                    <div className="pron-pill" onClick={() => speakSv(dailyWord.sv)} style={{ fontSize: 14, padding: "6px 14px" }}>
+                                        🔊 /{dailyWord.aiData.pronunciation}/
+                                    </div>
+                                )}
+                                {dailyWord.category && <span className="bdg bdg-pu" style={{ fontSize: 12, padding: "4px 12px" }}>{dailyWord.category}</span>}
+                            </div>
+                            <div style={{ fontSize: 22, fontWeight: 700, color: T.text, opacity: 0.9 }}>{dailyWord.vi}</div>
                         </div>
-                        <button className="btn btn-p" style={{ flexShrink: 0, width: 44, height: 44, padding: 0, fontSize: 20 }} onClick={() => speakSv(dailyWord.sv)}>
+                        <button className="btn btn-p" style={{ width: 64, height: 64, borderRadius: 20, fontSize: 30, boxShadow: "0 10px 25px rgba(255,107,157,0.3)" }} onClick={() => speakSv(dailyWord.sv)}>
                             🔊
                         </button>
                     </div>

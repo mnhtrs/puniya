@@ -1,25 +1,30 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { T } from "../constants/theme";
 import { speakSv } from "../services/api";
+import { SvFlag } from "../components/SvFlag";
+import { VnFlag } from "../components/VnFlag";
 
 export default function FlashcardPage({ vocab, onBack }) {
     const [cat, setCat] = useState("Tất cả");
     const [mode, setMode] = useState("sv-vi");
     const [idx, setIdx] = useState(0);
     const [flipped, setFlipped] = useState(false);
-    const pool = useRef([]);
+    const [pool, setPool] = useState([]);
+
+    useEffect(() => {
+        const filtered = cat === "Tất cả" ? vocab : vocab.filter((v) => v.category === cat);
+        // Shuffle for better learning
+        const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+        setPool(shuffled);
+        setIdx(0);
+        setFlipped(false);
+    }, [cat, mode, vocab]); // Removed vocab.length, use vocab directly for robustness
 
     const fcCats = ["Tất cả", ...new Set(vocab.map((v) => v.category).filter(Boolean))];
     const filtered = cat === "Tất cả" ? vocab : vocab.filter((v) => v.category === cat);
 
-    useEffect(() => {
-        pool.current = [...filtered];
-        setIdx(0);
-        setFlipped(false);
-    }, [cat, mode, vocab.length]);
-
-    const card = pool.current[idx];
-    const total = pool.current.length;
+    const card = pool[idx];
+    const total = pool.length;
 
     function prev() {
         setIdx((i) => Math.max(0, i - 1));
@@ -60,8 +65,9 @@ export default function FlashcardPage({ vocab, onBack }) {
                         setIdx(0);
                         setFlipped(false);
                     }}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
                 >
-                    SV→VI
+                    <SvFlag size={14} /> → <VnFlag size={14} />
                 </div>
                 <div
                     className={`tab ${mode === "vi-sv" ? "active" : ""}`}
@@ -70,8 +76,9 @@ export default function FlashcardPage({ vocab, onBack }) {
                         setIdx(0);
                         setFlipped(false);
                     }}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
                 >
-                    VI→SV
+                    <VnFlag size={14} /> → <SvFlag size={14} />
                 </div>
                 {fcCats.map((c) => (
                     <div key={c} className={`tab ${cat === c ? "active" : ""}`} onClick={() => setCat(c)}>
@@ -107,7 +114,9 @@ export default function FlashcardPage({ vocab, onBack }) {
                     <div className="fc-wrap" onClick={() => setFlipped((f) => !f)}>
                         <div className={`fc-inner ${flipped ? "flipped" : ""}`}>
                             <div className="fc-face fc-front">
-                                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 10 }}>{mode === "sv-vi" ? "🇸🇪 Tiếng Thụy Điển" : "🇻🇳 Tiếng Việt"}</div>
+                                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                    {mode === "sv-vi" ? <><SvFlag size={14} /> Tiếng Thụy Điển</> : <><VnFlag size={14} /> Tiếng Việt</>}
+                                </div>
                                 <div style={{ fontSize: 30, fontWeight: 900, color: "white", textAlign: "center" }}>{mode === "sv-vi" ? card.sv : card.vi}</div>
                                 {mode === "sv-vi" && card.aiData?.ipa && <div style={{ fontSize: 13, opacity: 0.8, marginTop: 8, fontFamily: "monospace" }}>{card.aiData.ipa}</div>}
                                 {mode === "sv-vi" && card.aiData?.pronunciation && <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>/{card.aiData.pronunciation}/</div>}
@@ -119,7 +128,9 @@ export default function FlashcardPage({ vocab, onBack }) {
                                 <div style={{ fontSize: 12, opacity: 0.7, marginTop: 14 }}>👆 Nhấn để lật</div>
                             </div>
                             <div className="fc-face fc-back">
-                                <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 10 }}>{mode === "sv-vi" ? "🇻🇳 Nghĩa tiếng Việt" : "🇸🇪 Tiếng Thụy Điển"}</div>
+                                <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                    {mode === "sv-vi" ? <><VnFlag size={14} /> Nghĩa tiếng Việt</> : <><SvFlag size={14} /> Tiếng Thụy Điển</>}
+                                </div>
                                 <div style={{ fontSize: 26, fontWeight: 800, textAlign: "center" }}>{mode === "sv-vi" ? card.vi : card.sv}</div>
                                 {mode === "vi-sv" && card.aiData?.pronunciation && <div style={{ fontSize: 13, opacity: 0.7, marginTop: 6 }}>{card.aiData.pronunciation}</div>}
                                 {flipped && (

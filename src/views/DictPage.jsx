@@ -1,7 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { T } from "../constants/theme";
-import { svAutocomplete, lookupWordFull, speakSv } from "../services/api";
+import { svAutocomplete, lookupWordDict, speakSv } from "../services/api";
 import { dbAdd } from "../services/db";
+import { SvFlag } from "../components/SvFlag";
+import { VnFlag } from "../components/VnFlag";
+import { UkFlag } from "../components/UkFlag";
 
 export default function DictPage({ vocab, setVocab, onBack }) {
     const [query, setQuery] = useState("");
@@ -10,18 +13,70 @@ export default function DictPage({ vocab, setVocab, onBack }) {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [saved, setSaved] = useState(false);
+    const [history, setHistory] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("puniya_dict_history") || "[]");
+        } catch { return []; }
+    });
     const debRef = useRef(null);
+
+    function handleBack() {
+        syncUrl(""); // Xóa q= trên URL trước khi thoát
+        onBack();
+    }
+
+    const isAlreadyInNotebook = (word) => {
+        if (!word || !vocab.length) return false;
+        return vocab.some(v => v.sv.toLowerCase().trim() === word.toLowerCase().trim());
+    };
+
+    // Tự động tra từ khi mở URL có ?q= và lắng nghe phím Back/Forward
+    useEffect(() => {
+        const checkUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get("q");
+            if (q) {
+                setQuery(q);
+                doLookup(q, false);
+            } else {
+                setQuery("");
+                setResult(null);
+            }
+        };
+
+        checkUrl();
+        window.addEventListener("popstate", checkUrl);
+
+        return () => {
+            window.removeEventListener("popstate", checkUrl);
+            // Chỉ xóa URL khi unmount hoàn toàn (không phải khi chuyển state nội bộ)
+            // Tuy nhiên user muốn ra trang chủ là mất, nên để onBack lo
+        };
+    }, []);
+
+    // Lưu history vào localStorage
+    useEffect(() => {
+        localStorage.setItem("puniya_dict_history", JSON.stringify(history));
+    }, [history]);
+
+    // Đồng bộ URL khi tra từ
+    function syncUrl(word) {
+        if (!word) {
+            window.history.pushState({}, "", window.location.pathname);
+        } else {
+            window.history.pushState({ word }, "", `?q=${encodeURIComponent(word)}`);
+        }
+    }
 
     function handleChange(val) {
         setQuery(val);
-        setResult(null);
-        setSaved(false);
-        clearTimeout(debRef.current);
         if (!val.trim()) {
             setSugs([]);
             setShowSug(false);
+            syncUrl("");
             return;
         }
+        clearTimeout(debRef.current);
         debRef.current = setTimeout(async () => {
             const s = await svAutocomplete(val.trim());
             setSugs(s);
@@ -29,27 +84,54 @@ export default function DictPage({ vocab, setVocab, onBack }) {
         }, 200);
     }
 
-    async function doLookup(word) {
+    async function doLookup(word, updateUrl = true) {
+        if (!word) return;
         setQuery(word);
         setSugs([]);
         setShowSug(false);
         setLoading(true);
         setResult(null);
         setSaved(false);
-        const res = await lookupWordFull(word);
+
+        if (updateUrl) syncUrl(word);
+
+        // Cập nhật history (đưa lên đầu, xóa trùng)
+        setHistory(prev => {
+            const newHist = [word, ...prev.filter(h => h !== word)].slice(0, 10);
+            return newHist;
+        });
+
+        const res = await lookupWordDict(word);
         setResult(res);
         setLoading(false);
     }
 
+    function clearHistory() {
+        if (confirm("Xóa toàn bộ lịch sử tra từ?")) {
+            setHistory([]);
+        }
+    }
+
+    function removeHistoryItem(e, item) {
+        e.stopPropagation();
+        setHistory(prev => prev.filter(h => h !== item));
+    }
+
     async function saveWord() {
-        const ai = result?.aiData;
-        if (!ai || !query) return;
+        if (!result || !query) return;
+        const firstBlock = result.blocks?.[0];
         const entry = {
             sv: query,
-            vi: ai.viMeaning || query,
-            category: ai.partOfSpeech || "Từ điển",
-            aiData: ai,
-            lookupData: result.wkData,
+            vi: result.viMeaning || query,
+            category: "",
+            aiData: {
+                word: query,
+                viMeaning: result.viMeaning,
+                ipa: result.ipa,
+                partOfSpeech: firstBlock?.posVi || "Từ vựng",
+                definitions: (firstBlock?.defsVi || []).map(d => ({ vi: d.vi })),
+                examples: (firstBlock?.examplesVi || []).map(e => ({ sv: e.sv, vi: e.vi })),
+            },
             createdAt: Date.now(),
         };
         const id = await dbAdd("vocab", entry);
@@ -57,74 +139,35 @@ export default function DictPage({ vocab, setVocab, onBack }) {
         setSaved(true);
     }
 
-    const ai = result?.aiData;
+    const alreadyExists = isAlreadyInNotebook(query);
 
     return (
         <div className="main">
             {onBack && (
-                <button className="btn btn-s" style={{ marginBottom: 10, fontSize: 12, padding: "5px 12px" }} onClick={onBack}>
+                <button className="btn btn-s" style={{ marginBottom: 14, fontSize: 13, padding: "6px 14px", display: "flex", alignItems: "center", gap: 5 }} onClick={handleBack}>
                     ← Trang chủ
                 </button>
             )}
-            <div className="sec-title">🔎 Từ điển Thụy Điển</div>
+            <div className="sec-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                🔎 Từ điển <SvFlag size={20} /> <VnFlag size={20} />
+            </div>
 
+            {/* Search bar */}
             <div style={{ position: "relative", marginBottom: 13, display: "flex", gap: 8 }}>
                 <div style={{ position: "relative", flex: 1 }}>
-                    <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🇸🇪</span>
-                    <input
-                        className="inp"
-                        style={{ paddingLeft: 35 }}
-                        placeholder="Gõ từ..."
-                        value={query}
+                    <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", zIndex: 1, display: "flex" }}><SvFlag size={20} /></span>
+                    <input className="inp" style={{ paddingLeft: 35 }} placeholder="Gõ từ..." value={query}
                         onChange={(e) => handleChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && query.trim()) doLookup(query.trim());
-                            if (e.key === "Escape") setShowSug(false);
-                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter" && query.trim()) doLookup(query.trim()); if (e.key === "Escape") setShowSug(false); }}
                         onBlur={() => setTimeout(() => setShowSug(false), 180)}
                         onFocus={() => sugs.length > 0 && setShowSug(true)}
                         autoComplete="off"
                     />
                     {showSug && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "calc(100% + 1px)",
-                                left: 0,
-                                right: 0,
-                                background: "#fff",
-                                borderRadius: "0 0 14px 14px",
-                                boxShadow: "0 8px 30px rgba(0,0,0,.18)",
-                                border: `1.5px solid ${T.border}`,
-                                borderTop: "none",
-                                zIndex: 300,
-                                maxHeight: 240,
-                                overflowY: "auto",
-                            }}
-                        >
+                        <div className="sug-wrap">
                             {sugs.map((s, i) => (
-                                <div
-                                    key={i}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        doLookup(s);
-                                    }}
-                                    style={{
-                                        padding: "10px 14px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 10,
-                                        cursor: "pointer",
-                                        borderBottom: i < sugs.length - 1 ? `1px solid ${T.border}` : "none",
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = T.pinkP)}
-                                    onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
-                                >
-                                    <span style={{ color: T.textL, fontSize: 13 }}>🔍</span>
-                                    <span style={{ flex: 1 }}>{s}</span>
-                                    <span style={{ fontSize: 11, color: T.textL, fontWeight: 400 }}>↵</span>
+                                <div key={i} className="sug-item" onMouseDown={(e) => { e.preventDefault(); doLookup(s); }}>
+                                    <span style={{ marginRight: 10, color: T.textL }}>🔍</span>{s}<span style={{ float: "right", fontSize: 11, color: T.textL }}>↵</span>
                                 </div>
                             ))}
                         </div>
@@ -135,115 +178,227 @@ export default function DictPage({ vocab, setVocab, onBack }) {
                 </button>
             </div>
 
-            {loading && (
-                <div style={{ textAlign: "center", padding: 20 }}>
-                    <div className="dots">
-                        <div className="dot" />
-                        <div className="dot" />
-                        <div className="dot" />
+            {/* Search History */}
+            {!loading && !result && history.length > 0 && (
+                <div style={{ marginBottom: 20, animation: "fadeIn 0.3s" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5 }}>
+                            🕒 Lịch sử gần đây
+                        </div>
+                        <button onClick={clearHistory} style={{ fontSize: 11, background: "none", border: "none", color: T.pink, cursor: "pointer", fontWeight: 700 }}>Xóa hết</button>
                     </div>
-                    <div style={{ fontSize: 13, color: T.textL, marginTop: 6 }}>Đang tra từ điển...</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {history.map((h, i) => (
+                            <div key={i} className="bdg"
+                                style={{
+                                    background: "#fff", color: T.text, padding: "6px 14px", borderRadius: 12,
+                                    fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.05)", border: `1px solid ${T.pinkL}`
+                                }}
+                                onClick={() => doLookup(h)}
+                            >
+                                <span style={{ opacity: 0.6 }}>🔍</span> {h}
+                                <span onClick={(e) => removeHistoryItem(e, h)}
+                                    style={{
+                                        opacity: 0.4, fontSize: 18, marginLeft: 4,
+                                        width: 20, height: 20, display: "flex",
+                                        alignItems: "center", justifyContent: "center",
+                                        borderRadius: "50%", background: "rgba(0,0,0,0.05)"
+                                    }}>×</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {result &&
-                !loading &&
-                (ai ? (
-                    <div className="card" style={{ padding: 18 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                            <div>
-                                <div style={{ fontSize: 32, fontWeight: 900, color: T.pink, lineHeight: 1.1 }}>{ai.word || query}</div>
-                                {ai.ipa && (
-                                    <code style={{ fontSize: 13, color: T.purple, background: T.purpleL, padding: "2px 9px", borderRadius: 7, display: "inline-block", marginTop: 4 }}>
-                                        {ai.ipa}
-                                    </code>
+            {/* Loading */}
+            {loading && (
+                <div style={{ textAlign: "center", padding: 20 }}>
+                    <div className="dots"><div className="dot" /><div className="dot" /><div className="dot" /></div>
+                    <div style={{ fontSize: 13, color: T.textL, marginTop: 6 }}>Đang tra từ Wiktionary...</div>
+                </div>
+            )}
+
+            {/* Results */}
+            {result && !loading && (
+                <div className="card" style={{ padding: "20px 24px", marginTop: 10, animation: "fadeIn 0.3s" }}>
+                    {/* Header: Word + IPA + Speaker */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                        <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ fontSize: 32, fontWeight: 900, color: T.pink, lineHeight: 1.1 }}>{result.word}</div>
+                                {result.cefr && (
+                                    <span className={`bdg ${result.cefr.startsWith('A') ? 'bdg-ok' : result.cefr.startsWith('B') ? 'bdg-yl' : 'bdg-er'}`}
+                                        style={{ fontSize: 13, padding: "2px 8px", borderRadius: 6 }}>
+                                        {result.cefr}
+                                    </span>
                                 )}
-                                {ai.pronunciation && <div style={{ fontSize: 12, color: T.textL, marginTop: 3 }}>🔊 /{ai.pronunciation}/</div>}
                             </div>
-                            <button className="btn btn-ico btn-s" onClick={() => speakSv(ai.word || query)}>
-                                🔊
-                            </button>
-                        </div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                            {ai.partOfSpeech && <span className="bdg bdg-pk">{ai.partOfSpeech}</span>}
-                            {ai.gender && ai.gender !== "ej tillämpligt" && <span className="bdg bdg-bl">{ai.gender}</span>}
-                            {ai.level && <span className="bdg bdg-mn">{ai.level}</span>}
-                        </div>
-                        {ai.inflection && (
-                            <div style={{ fontSize: 12, background: "#f5f5f5", padding: "6px 10px", borderRadius: 8, marginBottom: 10, fontStyle: "italic", color: "#555" }}>
-                                📋 {ai.inflection}
-                            </div>
-                        )}
-                        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${T.border}` }}>{ai.viMeaning}</div>
-                        {(ai.definitions || []).filter((d) => d.vi).map((def, i) => (
-                            <div key={i} style={{ marginBottom: 13 }}>
-                                <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 4 }}>
-                                    <span style={{ background: T.pink, color: "#fff", borderRadius: 4, padding: "1px 7px", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
-                                    <div style={{ fontSize: 15, fontWeight: 700 }}>{def.vi}</div>
+                            {result.ipa && (
+                                <div style={{ display: "inline-block", background: T.pinkP, color: T.pink, padding: "3px 10px", borderRadius: 8, fontSize: 14, fontWeight: 800, marginTop: 6 }}>
+                                    {result.ipa}
                                 </div>
-                                {def.en && <div style={{ fontSize: 13, color: T.textL, fontStyle: "italic", paddingLeft: 26, marginBottom: 4 }}>{def.en}</div>}
-                                {(def.examples || []).filter((e) => e.sv).map((ex, j) => (
-                                    <div
-                                        key={j}
-                                        style={{ marginLeft: 26, marginBottom: 6, padding: "7px 11px", background: "#f9f5ff", borderRadius: 10, borderLeft: `3px solid ${T.purple}`, cursor: "pointer" }}
-                                        onClick={() => speakSv(ex.sv)}
-                                    >
-                                        <div style={{ fontSize: 14, fontWeight: 700, color: T.purple, fontStyle: "italic" }}>{ex.sv} 🔊</div>
-                                        <div style={{ fontSize: 13, color: T.textL, marginTop: 3 }}>{ex.vi}</div>
+                            )}
+                            <div style={{ fontSize: 22, fontWeight: 700, color: T.text, marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                                <VnFlag size={18} /> {result.viMeaning}
+                            </div>
+                        </div>
+                        <button className="btn btn-ico btn-p" onClick={() => speakSv(result.word)} style={{ width: 52, height: 52, borderRadius: 16, fontSize: 24 }}>🔊</button>
+                    </div>
+
+                    {/* POS Blocks */}
+                    {result.blocks && result.blocks.map((block, bi) => (
+                        <div key={bi} style={{ marginTop: bi > 0 ? 25 : 10, borderTop: bi > 0 ? `1px solid ${T.border}` : "none", paddingTop: bi > 0 ? 20 : 0 }}>
+                            {/* POS badge */}
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                                <span className="bdg bdg-pk" style={{ fontSize: 12, fontWeight: 800 }}>{block.posVi}</span>
+                                {block.nounInfo?.gender && <span className="bdg bdg-bl" style={{ fontSize: 12 }}>{block.nounInfo.gender}</span>}
+                            </div>
+
+                            {/* Definitions */}
+                            {block.defsVi && block.defsVi.length > 0 && (
+                                <div style={{ marginBottom: 15 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, marginBottom: 8, textTransform: "uppercase" }}>📖 Giải nghĩa</div>
+                                    {block.defsVi.map((def, di) => (
+                                        <div key={di} style={{ marginBottom: 8, paddingLeft: 12, borderLeft: `3px solid ${T.pinkL}` }}>
+                                            <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{di + 1}. {def.vi}</div>
+                                            <div style={{ fontSize: 12, color: T.textL, fontStyle: "italic", display: "flex", alignItems: "center", gap: 6 }}>
+                                                <UkFlag size={14} /> {def.en}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Verb conjugation */}
+                            {block.verbForms && (
+                                <div style={{ marginBottom: 15, background: "#f8fafc", padding: "12px 14px", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, marginBottom: 8, textTransform: "uppercase" }}>🔄 Chia động từ</div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                        {Object.entries(block.verbForms).map(([k, v]) => (
+                                            <div key={k} style={{ fontSize: 13 }}>
+                                                <span style={{ color: T.textL, fontWeight: 600 }}>{k}: </span>
+                                                <span style={{ color: T.pink, fontWeight: 800 }}>{v}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        ))}
-                        {ai.usage && (
-                            <div style={{ background: "#fffbea", border: `1px solid ${T.yellow}`, borderRadius: 9, padding: "8px 11px", marginBottom: 10 }}>
-                                <div style={{ fontSize: 10, fontWeight: 800, color: "#b45309", marginBottom: 2 }}>📝 GHI CHÚ CÁCH DÙNG</div>
-                                <div style={{ fontSize: 13, lineHeight: 1.6 }}>{ai.usage}</div>
-                            </div>
-                        )}
-                        {(ai.synonyms || []).filter(Boolean).length > 0 && (
-                            <div style={{ marginBottom: 7, fontSize: 13 }}>
-                                <span style={{ fontWeight: 700, color: T.textL }}>Đồng nghĩa: </span>
-                                {ai.synonyms
-                                    .filter(Boolean)
-                                    .map((s, i) => (
-                                        <span
-                                            key={i}
-                                            style={{ color: T.pink, fontWeight: 700, cursor: "pointer", marginRight: 6 }}
-                                            onMouseDown={(e) => {
-                                                e.preventDefault();
-                                                doLookup(s);
-                                            }}
-                                        >
+                                </div>
+                            )}
+
+                            {/* Adjective forms */}
+                            {block.adjForms && (
+                                <div style={{ marginBottom: 15, background: "#f8fafc", padding: "12px 14px", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, marginBottom: 8, textTransform: "uppercase" }}>📏 So sánh tính từ</div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                        {Object.entries(block.adjForms).map(([k, v]) => (
+                                            <div key={k} style={{ fontSize: 13 }}>
+                                                <span style={{ color: T.textL, fontWeight: 600 }}>{k}: </span>
+                                                <span style={{ color: T.purple, fontWeight: 800 }}>{v}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Noun info */}
+                            {block.nounInfo?.declType && (
+                                <div style={{ marginBottom: 15, background: "#f8fafc", padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase" }}>📋 Biến cách</div>
+                                    <div style={{ fontSize: 13, color: T.text, marginTop: 4 }}>Loại: {block.nounInfo.declType}</div>
+                                </div>
+                            )}
+
+                            {/* Examples */}
+                            {block.examplesVi && block.examplesVi.length > 0 && (
+                                <div style={{ marginBottom: 15 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, marginBottom: 8, textTransform: "uppercase" }}>💬 Ví dụ sử dụng</div>
+                                    {block.examplesVi.map((ex, ei) => (
+                                        <div key={ei} style={{ marginBottom: 8, background: "#f1f5f9", padding: "10px 14px", borderRadius: 12 }}>
+                                            <div style={{ fontWeight: 700, color: T.purple, fontSize: 14 }}><SvFlag size={14} /> {ex.sv}</div>
+                                            <div style={{ fontSize: 13, color: T.text, marginTop: 3 }}><VnFlag size={14} /> {ex.vi}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Synonyms */}
+                            {block.synonyms && block.synonyms.length > 0 && (
+                                <div style={{ marginBottom: 10 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase" }}>🔗 Đồng nghĩa: </span>
+                                    {block.synonyms.map((s, si) => (
+                                        <span key={si} className="bdg bdg-mn" style={{ fontSize: 11, marginRight: 6, marginBottom: 4, cursor: "pointer" }} onClick={() => doLookup(s)}>
                                             {s}
                                         </span>
                                     ))}
-                            </div>
-                        )}
-                        {(ai.antonyms || []).filter(Boolean).length > 0 && (
-                            <div style={{ marginBottom: 7, fontSize: 13 }}>
-                                <span style={{ fontWeight: 700, color: T.textL }}>Trái nghĩa: </span>
-                                {ai.antonyms.filter(Boolean).map((s, i) => (
-                                    <span key={i} style={{ marginRight: 6 }}>
-                                        {s}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                        {(ai.collocations || []).filter(Boolean).length > 0 && (
-                            <div style={{ marginBottom: 12, fontSize: 13 }}>
-                                <span style={{ fontWeight: 700, color: T.textL }}>Kết hợp: </span>
-                                {ai.collocations.filter(Boolean).join(" • ")}
-                            </div>
-                        )}
-                        <button className={`btn ${saved ? "btn-ok" : "btn-s"}`} style={{ width: "100%" }} onClick={saveWord} disabled={saved}>
-                            {saved ? "✅ Đã lưu vào sổ tay!" : "💾 Lưu vào sổ tay"}
-                        </button>
-                    </div>
-                ) : (
-                    <div className="card">
-                        <div style={{ textAlign: "center", color: T.textL, padding: 20 }}>Không tìm thấy từ này. Thử từ khác nhé!</div>
-                    </div>
-                ))}
+                                </div>
+                            )}
+
+                            {/* Antonyms */}
+                            {block.antonyms && block.antonyms.length > 0 && (
+                                <div style={{ marginBottom: 10 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase" }}>⚡ Trái nghĩa: </span>
+                                    {block.antonyms.map((a, ai) => (
+                                        <span key={ai} className="bdg" style={{ fontSize: 11, marginRight: 6, background: "#fee2e2", color: "#b91c1c", cursor: "pointer" }} onClick={() => doLookup(a)}>
+                                            {a}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Related terms */}
+                            {block.related && block.related.length > 0 && (
+                                <div style={{ marginBottom: 10 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase" }}>📌 Từ liên quan: </span>
+                                    {block.related.map((r, ri) => (
+                                        <span key={ri} className="bdg bdg-pu" style={{ fontSize: 11, marginRight: 6, cursor: "pointer" }} onClick={() => doLookup(r)}>
+                                            {r}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Derived terms */}
+                            {block.derived && block.derived.length > 0 && (
+                                <div style={{ marginBottom: 10 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase" }}>🌱 Từ phái sinh: </span>
+                                    {block.derived.slice(0, 8).map((d, di) => (
+                                        <span key={di} className="bdg bdg-yl" style={{ fontSize: 11, marginRight: 6, cursor: "pointer" }} onClick={() => doLookup(d)}>
+                                            {d}
+                                        </span>
+                                    ))}
+                                    {block.derived.length > 8 && <span style={{ fontSize: 11, color: T.textL }}>+{block.derived.length - 8}</span>}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* No Wiki data fallback */}
+                    {(!result.blocks || result.blocks.length === 0) && (
+                        <div style={{ padding: 12, background: "#fffbeb", borderRadius: 12, border: "1px solid #fde68a", marginTop: 10 }}>
+                            <div style={{ fontSize: 12, color: "#92400e", fontWeight: 700 }}>⚠️ Không tìm thấy dữ liệu chi tiết từ Wiktionary cho từ này.</div>
+                            <div style={{ fontSize: 12, color: "#92400e", marginTop: 4 }}>Nghĩa cơ bản từ Google Translate: <strong>{result.viMeaning}</strong></div>
+                        </div>
+                    )}
+
+                    {/* Source info */}
+                    {result.hasWikiData && (
+                        <div style={{ fontSize: 10, color: T.textL, textAlign: "center", marginTop: 15, opacity: 0.6 }}>
+                            Nguồn: Wiktionary (en.wiktionary.org) · Google Translate
+                        </div>
+                    )}
+
+                    {/* Save button */}
+                    <button
+                        className={`btn ${saved || alreadyExists ? "btn-ok" : "btn-p"}`}
+                        style={{ width: "100%", height: 50, fontSize: 16, fontWeight: 800, borderRadius: 15, marginTop: 15 }}
+                        onClick={saveWord}
+                        disabled={saved || alreadyExists}
+                    >
+                        {saved ? "✅ Đã lưu vào sổ tay" : alreadyExists ? "📚 Đã có trong sổ tay" : "💾 Lưu vào sổ tay"}
+                    </button>
+                </div>
+            )}
+
             {!loading && !result && !query && (
                 <div className="empty">
                     <div className="e-ico">🔎</div>

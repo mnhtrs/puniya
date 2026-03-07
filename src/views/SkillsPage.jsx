@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { T } from "../constants/theme";
 import { speakSv, aiWritingFeedback } from "../services/api";
 import { LISTENINGS, SPEAKINGS, READINGS, WRITINGS } from "../constants/skillsData";
+import { SvFlag } from "../components/SvFlag";
+import { VnFlag } from "../components/VnFlag";
 
 export default function SkillsPage({ initialTab, onBack }) {
     const [tab, setTab] = useState(initialTab || "listening");
@@ -100,23 +102,31 @@ export default function SkillsPage({ initialTab, onBack }) {
                         </div>
                     </div>
                     <div className="card">
-                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9 }}>📝 Văn bản</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9, display: "flex", alignItems: "center", gap: 6 }}>
+                            <SvFlag size={14} /> Văn bản
+                        </div>
                         <div style={{ fontSize: 15, lineHeight: 1.85, fontWeight: 600 }}>{LISTENINGS[lIdx].text}</div>
                         <button className="btn btn-s btn-sm" style={{ marginTop: 11 }} onClick={() => setShowTrans((s) => !s)}>
                             {showTrans ? "🙈 Ẩn dịch" : "👀 Xem dịch"}
                         </button>
-                        {showTrans && <div style={{ marginTop: 10, padding: 12, background: T.pinkP, borderRadius: 12, fontSize: 14, color: T.textL, lineHeight: 1.7 }}>{LISTENINGS[lIdx].translation}</div>}
+                        {showTrans && <div style={{ marginTop: 10, padding: 12, background: T.pinkP, borderRadius: 12, fontSize: 13, color: T.textL, lineHeight: 1.7, display: "flex", gap: 8, alignItems: "flex-start" }}><VnFlag size={14} style={{ marginTop: 2, flexShrink: 0 }} /> <span>{LISTENINGS[lIdx].translation}</span></div>}
                     </div>
                     <div className="card">
-                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9 }}>📖 Từ vựng</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9, display: "flex", alignItems: "center", gap: 6 }}>
+                            📚 Từ vựng <SvFlag size={14} /> <VnFlag size={14} />
+                        </div>
                         {LISTENINGS[lIdx].vocab.map((v, i) => {
                             const [sv, vi] = v.split(" = ");
                             return (
-                                <div key={i} className="vi-item" style={{ marginBottom: 7 }} onClick={() => speakSv(sv)}>
-                                    <span style={{ fontSize: 15, fontWeight: 800, color: T.pink }}>{sv}</span>
-                                    <span style={{ color: T.textL, margin: "0 6px" }}>→</span>
-                                    <span style={{ fontSize: 14, color: T.textL }}>{vi}</span>
-                                    <span style={{ marginLeft: "auto" }}>🔊</span>
+                                <div key={i} className="vi-item" style={{ marginBottom: 7, padding: "10px 14px" }} onClick={() => speakSv(sv)}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                                        <SvFlag size={14} />
+                                        <span style={{ fontSize: 15, fontWeight: 800, color: T.pink }}>{sv}</span>
+                                        <span style={{ color: T.textL, margin: "0 6px" }}>→</span>
+                                        <VnFlag size={14} />
+                                        <span style={{ fontSize: 14, color: T.textL }}>{vi}</span>
+                                    </div>
+                                    <span style={{ marginLeft: "auto", fontSize: 14 }}>🔊</span>
                                 </div>
                             );
                         })}
@@ -147,7 +157,9 @@ export default function SkillsPage({ initialTab, onBack }) {
                         <button className={`rec-btn ${recording ? "on" : ""}`} onClick={() => setRecording((r) => !r)}>
                             {recording ? "⏹" : "🎤"}
                         </button>
-                        <div style={{ fontSize: 12, color: T.textL, marginTop: 11, fontWeight: 600 }}>{recording ? "Đọc to câu mẫu bên trên!" : "Luyện phát âm tiếng Thụy Điển"}</div>
+                        <div style={{ fontSize: 12, color: T.textL, marginTop: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                            {recording ? "🔴 Đang đọc mẫu..." : <><SvFlag size={14} /> Luyện phát âm Thuỵ Điển</>}
+                        </div>
                     </div>
                     <div className="card">
                         <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9 }}>💡 Nghe phát âm chuẩn</div>
@@ -183,16 +195,16 @@ export default function SkillsPage({ initialTab, onBack }) {
                         </div>
                         <div style={{ fontSize: 15, lineHeight: 1.9, fontWeight: 500, marginBottom: 11 }}>{READINGS[rIdx].text}</div>
                         <div style={{ display: "flex", gap: 8 }}>
-                            <button className="btn btn-s btn-sm" onClick={() => speakSv(READINGS[rIdx].text)}>
+                            <button className="btn btn-s btn-sm" onClick={() => speakSv(READINGS[rIdx].text)} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                 🔊 Nghe
                             </button>
-                            <button className="btn btn-s btn-sm" onClick={() => setShowRT((s) => !s)}>
-                                {showRT ? "🙈 Ẩn" : "👀 Dịch"}
+                            <button className="btn btn-s btn-sm" onClick={() => setShowRT((s) => !s)} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <VnFlag size={12} /> {showRT ? "Ẩn" : "Dịch"}
                             </button>
                         </div>
                         {showRT && (
-                            <div style={{ marginTop: 11, padding: 12, background: T.pinkP, borderRadius: 12, fontSize: 14, color: T.textL, lineHeight: 1.75, borderLeft: `3px solid ${T.pink}` }}>
-                                {READINGS[rIdx].translation}
+                            <div style={{ marginTop: 11, padding: 12, background: T.pinkP, borderRadius: 12, fontSize: 13, color: T.textL, lineHeight: 1.75, borderLeft: `3px solid ${T.pink}`, display: "flex", gap: 8 }}>
+                                <VnFlag size={14} style={{ marginTop: 3, flexShrink: 0 }} /> <span>{READINGS[rIdx].translation}</span>
                             </div>
                         )}
                     </div>
@@ -238,7 +250,9 @@ export default function SkillsPage({ initialTab, onBack }) {
                         <div style={{ background: "white", borderRadius: 10, padding: "8px 12px", fontSize: 13, color: T.pink, fontWeight: 600 }}>💡 {WRITINGS[wIdx].tip}</div>
                     </div>
                     <div className="card">
-                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9 }}>✍️ Bài viết của bạn</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.pink, marginBottom: 9, display: "flex", alignItems: "center", gap: 5 }}>
+                            ✍️ <SvFlag size={14} /> Viết tiếng Thụy Điển
+                        </div>
                         <textarea className="warea" placeholder="Viết tiếng Thụy Điển vào đây..." value={wText} onChange={(e) => setWText(e.target.value)} />
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 9 }}>
                             <span style={{ fontSize: 12, color: T.textL }}>{wText.length} ký tự</span>

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { dbOpen, dbGetAll } from "./services/db";
+import { useState, useEffect, useRef } from "react";
+import { dbOpen, dbGetAll, dbAdd, dbDelete } from "./services/db";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
 import { KaTeXLoader } from "./components/MathRender";
+import { prefetchAllAudio } from "./services/api";
 import HomePage from "./views/HomePage";
 import VocabPage from "./views/VocabPage";
 import SettingsPage from "./views/SettingsPage";
@@ -10,14 +11,27 @@ import SettingsPage from "./views/SettingsPage";
 export default function App() {
     const [tab, setTab] = useState("home");
     const [vocab, setVocab] = useState([]);
+    const [tags, setTags] = useState([]);
     const [streak, setStreak] = useState(1);
     const [loading, setLoading] = useState(true);
+    const mainRef = useRef(null);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     useEffect(() => {
         async function init() {
             await dbOpen();
-            const all = await dbGetAll("vocab");
-            setVocab(all);
+            const allVocab = await dbGetAll("vocab");
+            const allTags = await dbGetAll("tags");
+            setVocab(allVocab);
+            setTags(allTags);
+
+            // Audio prefetch
+            if (allVocab.length > 0) {
+                prefetchAllAudio(allVocab);
+            }
 
             // Simple streak logic
             const lastStudy = localStorage.getItem("puniya_last_study_2");
@@ -46,6 +60,37 @@ export default function App() {
         init();
     }, []);
 
+    async function handleImport(newVocab, newStreak, newTags = []) {
+        setLoading(true);
+        // Clean old DB
+        const oldV = await dbGetAll("vocab");
+        for (const v of oldV) await dbDelete("vocab", v.id);
+        const oldT = await dbGetAll("tags");
+        for (const t of oldT) await dbDelete("tags", t.id);
+
+        // Add new vocab
+        const importedV = [];
+        for (const v of newVocab) {
+            const { id: _, ...rest } = v;
+            const newId = await dbAdd("vocab", rest);
+            importedV.push({ ...rest, id: newId });
+        }
+
+        // Add new tags
+        const importedT = [];
+        for (const t of newTags) {
+            const { id: _, ...rest } = t;
+            const newId = await dbAdd("tags", rest);
+            importedT.push({ ...rest, id: newId });
+        }
+
+        setVocab(importedV);
+        setTags(importedT);
+        setStreak(newStreak);
+        localStorage.setItem("puniya_streak_2", newStreak.toString());
+        setLoading(false);
+    }
+
     if (loading) {
         return (
             <div className="loader-wrap">
@@ -58,12 +103,12 @@ export default function App() {
     return (
         <div className="app-container">
             <KaTeXLoader />
-            <Header streak={streak} vocab={vocab} />
+            <Header streak={streak} vocab={vocab} onScrollToTop={scrollToTop} />
 
-            <main className="content">
+            <main ref={mainRef} className="content" style={{ flex: 1 }}>
                 {tab === "home" && <HomePage vocab={vocab} setVocab={setVocab} streak={streak} />}
-                {tab === "vocab" && <VocabPage vocab={vocab} setVocab={setVocab} />}
-                {tab === "settings" && <SettingsPage streak={streak} vocab={vocab} />}
+                {tab === "vocab" && <VocabPage vocab={vocab} setVocab={setVocab} tags={tags} setTags={setTags} />}
+                {tab === "settings" && <SettingsPage streak={streak} vocab={vocab} tags={tags} onImport={handleImport} />}
             </main>
 
             <BottomNav active={tab} onChange={setTab} />
