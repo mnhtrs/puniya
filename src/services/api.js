@@ -6,35 +6,20 @@
 
 // Global helper to call GPT-4o AI
 async function callGPT(prompt, maxTokens = 1500) {
-    const key = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!key || key.includes("your_openai_key")) {
-        console.warn("OpenAI API key not set.");
-        return null;
-    }
     try {
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        const res = await fetch("/api/gpt", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${key}`
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "Bạn là từ điển Thụy Điển - Việt CHUYÊN NGHIỆP. Chỉ trả về JSON hợp lệ. TUYỆT ĐỐI không dùng tiếng Anh hay giữ nguyên từ gốc Thuỵ Điển trong trường viMeaning."
-                    },
-                    { role: "user", content: prompt }
-                ],
-                max_tokens: maxTokens,
-                temperature: 0.1,
-                response_format: { type: "json_object" }
-            })
+            body: JSON.stringify({ prompt, maxTokens })
         });
+
         if (!res.ok) return null;
+
         const data = await res.json();
         return data.choices?.[0]?.message?.content || null;
+
     } catch (e) {
         console.error("GPT Error:", e);
         return null;
