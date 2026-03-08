@@ -21,6 +21,9 @@ export const KEMI = [
             { q: "Hur separerar man järnfilspån från sand?", a: "Magnet – järn är magnetiskt, sand inte" },
             { q: "Vilket separationssätt passar för olja-vatten?", a: "Separationsapparat (dekantation) – olika densitet och inte blandningsbara" },
             { q: "Är luften ett rent ämne?", a: "Nej, luft är en homogen blandning av N₂, O₂, Ar, CO₂ m.fl." },
+            { q: "Varför fungerar kromatografi för att separera färger?", a: "Ämnena har olika förmåga att fästa vid papperet/lösa sig i vätskan" },
+            { q: "Hur skulle du utvinna rent salt från havsvatten?", a: "Genom indunstning eller destillation" },
+            { q: "Vad kallas en blandning av sand och vatten?", a: "Heterogen blandning (suspension)" }
         ]
     },
 
@@ -43,6 +46,9 @@ export const KEMI = [
             { q: "Är socker som löses i vatten en kemisk förändring?", a: "Nej, fysikalisk – sockermolekylerna bevaras" },
             { q: "Vad visar att en kemisk reaktion skett vid förbränning av papper?", a: "Aska, rök, gas bildas, färgändring, värme – nya ämnen med andra egenskaper" },
             { q: "100g järn rostar. Massan av Fe₂O₃ > eller < 100g?", a: "> 100g – syre från luften binds in i produkten (masskonstans)" },
+            { q: "Är fotosyntesen en fysikalisk eller kemisk reaktion?", a: "Kemisk. Koldioxid och vatten blir till socker och syre" },
+            { q: "Varför kallar vi kondensation för en fysikalisk förändring?", a: "Vattenmolekylen (H₂O) förändras inte kemiskt, bara dess aggregationstillstånd" },
+            { q: "Ge ett exempel på när en fällning bildas.", a: "T.ex. när silvernitrat blandas med natriumklorid och vitt silverklorid faller till botten" }
         ]
     },
 
@@ -68,371 +74,278 @@ export const KEMI = [
             { q: "⁳⁹K (Z=19): protoner, neutroner, elektroner?", a: "19p, 20n, 19e⁻, konfiguration 2,8,8,1" },
             { q: "Vilken grupp och period: Ca (Z=20)?", a: "Grupp 2, Period 4 (konfiguration: 2,8,8,2)" },
             { q: "Hur många elektroner har Fe³⁺ (Z=26)?", a: "26−3=23 elektroner" },
+            { q: "Varför reagerar alkalimetaller så våldsamt med vatten?", a: "De har bara en valenselektron som lätt avges för att nå ädelgasstruktur" },
+            { q: "Vad kännetecknar isotoperna av ett grundämne?", a: "Samma antal protoner (och elektroner) men olika antal neutroner" },
+            { q: "Vilken grupp kallas för halogener?", a: "Grupp 17" }
         ]
     },
 
     {
         id: 4, klass: "Åk 8", area: "Kemiska bindningar", emoji: "🔗",
-        title: "Kemiska bindningar",
-        content: "Atomer binder för ädelgasstruktur. Tre typer: jonbindning (elektrostatisk), kovalent (delat par), metallbindning (elektronhav). Elektronegativitet (EN) avgör typ.",
+        title: "Kemiska bindningar: Jon, Kovalent, Metall",
+        content: "Atomer binder för att upnå ädelgasstruktur (oktettregeln). Tre typer: jonbindning (elektrostatisk), kovalent (dela elektronpar), metallbindning (elektronhav).",
         keyPoints: [
             "Jonbindning: ΔEN>1,7 | metall+icke-metall | bildar jonkristall",
             "Kovalent: ΔEN<1,7 | icke-metall+icke-metall | enkla/dubbla/trippelbindningar",
-            "Polär kovalent: 0,4<ΔEN<1,7 | asymmetrisk elektronfördelning",
-            "Metallbindning: metallatomer + fritt rörliga elektroner (elektronhav)",
-            "VSEPR: bindande+fria elektronpar bestämmer geometri",
-            "H₂O: vinkelbent 104,5° | CO₂: linjär | NH₃: trigonal pyramidal | CH₄: tetraeder",
-            "Vätebindning: F, O, N binder H–F, H–O, H–N (viktigt för H₂O)",
+            "Polär kovalent: asymmetrisk elektronfördelning",
+            "Metallbindning: leder ström och värme pga rörliga elektroner",
+            "VSEPR: elektronpar repelerar varandra → molekylgeometri",
         ],
         examples: [
-            { sv: "NaCl: EN(Na)=0,9, EN(Cl)=3,2 → ΔEN=2,3>1,7 → jonbindning", vi: "Na⁺ och Cl⁻ hålls av elektrostatisk attraktion i kristall" },
-            { sv: "H₂O: polär kovalent, ΔEN=1,4, vinkelbent → dipolmolekyl", vi: "Vätebindningar ger ovanligt högt kokpunkt 100°C" },
+            { sv: "NaCl: EN(Na)=0,9, EN(Cl)=3,2 → ΔEN=2,3>1,7 → jonbindning", vi: "Na⁺ och Cl⁻ attraheras till ett kristallgitter" },
+            { sv: "CO₂: dubbelbindningar O=C=O", vi: "Linjär geometri på grund av repulsion" },
         ],
         exercises: [
-            { q: "Bindningstyp i HCl? EN(H)=2,2, EN(Cl)=3,2", a: "ΔEN=1,0 → polär kovalent" },
-            { q: "Geometri hos BF₃ (3 bindningar, 0 fria par)?", a: "Trigonal plan, 120°" },
-            { q: "Varför är CO₂ opolar trots polära bindningar?", a: "Linjär symmetri → dipolmomenten tar ut varandra" },
+            { q: "Vilken bindning bildas mellan Na och Cl?", a: "Jonbindning" },
+            { q: "Varför leder metaller ström?", a: "Delokaliserade elektroner ('elektronhav') som kan röra sig fritt" },
+            { q: "Är molekylen O₂ en jonförening eller kovalent förening?", a: "Kovalent förening (ickemetall + ickemetall, delar elektronpar)" },
+            { q: "Förklara varför koksalt (NaCl) har en så hög smältpunkt.", a: "Starka elektrostatiska krafter i jonkristallen (jonbindning)" },
+            { q: "Ge exempel på en molekyl med polär kovalent bindning.", a: "H₂O, HCl" },
+            { q: "Vad kallas regeln att atomer strävar efter 8 valenselektroner?", a: "Oktettregeln" }
         ]
     },
 
     {
         id: 5, klass: "Åk 8", area: "Reaktioner", emoji: "⚗️",
         title: "Kemiska reaktioner & energi",
-        content: "Kemisk reaktion: nya ämnen bildas. Masskonstans och laddningskonstans. Reaktionstyper. Aktiveringsenergi och katalysatorer.",
+        content: "Masskonstans gäller alltid. Vi balanserar med koefficienter. Kemiska reaktioner kan vara exoterma eller endoterma.",
         keyPoints: [
-            "Balansering: koefficienter (EJ subskript) för massa+laddningsbalans",
-            "Syntes: A+B→AB | Sönderfall: AB→A+B | Substitution: A+BC→AC+B",
-            "Dubbel substitution: fällning, neutralisation",
-            "Exoterm ΔH<0 (förbränning) | Endoterm ΔH>0 (fotosyntesen)",
-            "Aktiveringsenergi E_a: minimienergikraven för att reaktion startar",
-            "Katalysator: sänker E_a, förbrukas ej",
-            "Reaktionshastighet: ökar med T, c, yta, katalysator",
+            "Balansering: antal atomer av varje slag måste vara samma på båda sidor",
+            "Exoterm: energi frigörs (blir varmt, T ökar)",
+            "Endoterm: energi upptas (blir kallt, T minskar)",
+            "Aktiveringsenergi (E_a): krävs för att starta reaktionen",
+            "Katalysator: ökar reaktionshastigheten, sänker E_a",
         ],
         examples: [
-            { sv: "CH₄+2O₂→CO₂+2H₂O  ΔH=−890 kJ/mol (exoterm)", vi: "4H och 1C på mỗi sida ✓, 4O på mỗi sida ✓" },
-            { sv: "Fe₂O₃+3CO→2Fe+3CO₂  (reduktion av järnoxid)", vi: "Industriell järnframställning i masugn" },
+            { sv: "C + O₂ → CO₂ + energi (exoterm)", vi: "Förbränning av kol" },
+            { sv: "Enzymer är kroppens biologiska katalysatorer", vi: "Underlättar matsmältning etc." },
         ],
         exercises: [
-            { q: "Balansera: C₃H₈+O₂→CO₂+H₂O", a: "C₃H₈+5O₂→3CO₂+4H₂O" },
-            { q: "Balansera: Al+HCl→AlCl₃+H₂", a: "2Al+6HCl→2AlCl₃+3H₂" },
-            { q: "Varför ökar reaktionshastigheten med temperatur?", a: "Fler partiklar har tillräcklig energi (≥E_a) vid högre T" },
+            { q: "Balansera: H₂ + O₂ → H₂O", a: "2H₂ + O₂ → 2H₂O" },
+            { q: "Vad kallas den minsta energi som krävs för att en reaktion ska starta?", a: "Aktiveringsenergi" },
+            { q: "Brinnande ved är ett exempel på en...", a: "Exoterm reaktion (avger värme)" },
+            { q: "Balansera följande ekvation: N₂ + H₂ → NH₃", a: "N₂ + 3H₂ → 2NH₃" },
+            { q: "Hur fungerar en katalysator?", a: "Den sänker aktiveringsenergin och påskyndar reaktionen utan att förbrukas själv" },
+            { q: "Varför förvarar vi mat i kylskåp?", a: "För att sänka temperaturen, vilket sänker reaktionshastigheten hos bakteriers nedbrytning" }
         ]
     },
 
     // ─── ÅK 9 ──────────────────────────────────────────
     {
         id: 6, klass: "Åk 9", area: "Organisk kemi", emoji: "🧬",
-        title: "Organisk kemi & funktionella grupper",
-        content: "Organisk kemi = kolets kemi. Kol bildar 4 bindningar, långa kedjor, ringar. IUPAC-nomenklatur. Funktionella grupper bestämmer reaktivitet.",
+        title: "Organisk kemi: Kolets kemi",
+        content: "Organisk kemi är kolets (C) kemi. Kol kan bilda långa kedjor. Organiska ämnen från naturen (kolväten, alkoholer).",
         keyPoints: [
-            "Alkaner CₙH₂ₙ₊₂: mättade, −an (metan, etan...)",
-            "Alkener CₙH₂ₙ: C=C dubbelbindning, −en, additionsreaktion",
-            "Alkyner CₙH₂ₙ₋₂: C≡C, −yn",
-            "Alkoholer R−OH: −ol (metanol, etanol...) | Fenolgrupp: ArOH",
-            "Aldehyder R−CHO: −al | Ketoner R−CO−R: −on",
-            "Karbonsyror R−COOH: −syra | Estrar R−COO−R': −at",
-            "Aminer R−NH₂ | Amider R−CONH₂",
-            "Isomerer: strukturisomerer, geometriska, stereo-/kirala",
+            "Alkaner (mättade): -an. Metan, etan, propan, butan",
+            "Alkener (1 dubbelbindning): -en. Eten, propen",
+            "Alkyner (1 trippelbindning): -yn. Etyn, propyn",
+            "Alkoholer: har OH-grupp (hydroxylgrupp). Slutar på -ol.",
+            "Metanol är mycket giftigt (träsprit). Etanol finns i drycker.",
+            "Fossila bränslen är blandningar av olika kolväten.",
         ],
         examples: [
-            { sv: "CH₃−CH₂−OH = Etanol: 2C alkohol, −OH grupp, kokpunkt 78°C", vi: "Vätebindning via −OH ger hög kokpunkt jämfört med etan (−89°C)" },
-            { sv: "CH₃COOH + C₂H₅OH ⇌ CH₃COOC₂H₅ + H₂O", vi: "Fischer-esterifiering, reversibel, ester luktar päron" },
+            { sv: "CH₄ är metan, den enklaste alkanen", vi: "Huvudbeståndsdel i naturgas" },
+            { sv: "C₂H₅OH är etanol, alkohol i vin", vi: "Bildas genom jäsning av socker" },
         ],
         exercises: [
-            { q: "Namnge: CH₃−CH₂−CH₂−CH₂−CH₃", a: "Pentan (5C, alkan)" },
-            { q: "Formel för heptan?", a: "C₇H₁₆" },
-            { q: "Vilken funktionell grupp har propansyra?", a: "−COOH (karboxylgrupp)" },
+            { q: "Vilken typ av bindningar finns i alkaner?", a: "Bara enkelbindningar (mättade kolväten)" },
+            { q: "Vad kännetecknar en alkohol kemiskt?", a: "Den innehåller en eller flera OH-grupper (hydroxylgrupper)" },
+            { q: "Nämn de fyra första alkanerna i metanserien.", a: "Metan (CH₄), etan (C₂H₆), propan (C₃H₈), butan (C₄H₁₀)" },
+            { q: "Vilken av dessa är giftigast och kan leda till blindhet: etanol eller metanol?", a: "Metanol (träsprit)" },
+            { q: "Vad betyder det att ett kolväte är omättat?", a: "Det innehåller minst en dubbel- eller trippelbindning" },
+            { q: "Varför används eten ofta inom kemisk industri?", a: "Som råvara till plaster (polyeten)" }
         ]
     },
 
     {
         id: 7, klass: "Åk 9", area: "Syror & baser", emoji: "🧪",
-        title: "Syra-basteori & pH",
-        content: "Brønsted-Lowry: syra=H⁺-donator, bas=H⁺-acceptor. pH=−log[H⁺]. Vattenjämvikt Kw=[H⁺][OH⁻]=10⁻¹⁴ vid 25°C. Buffertar motstår pH-ändring.",
+        title: "Syror och baser",
+        content: "Syror avger vätejoner (H⁺). Baser tar upp vätejoner (avger hydroxidjoner, OH⁻). pH-skalan mäter surhet.",
         keyPoints: [
-            "Starka syror: HCl, HBr, HI, HNO₃, H₂SO₄, HClO₄ (100% dissociation)",
-            "Starka baser: NaOH, KOH, Ca(OH)₂",
-            "pH=−log[H⁺] | pOH=−log[OH⁻] | pH+pOH=14",
-            "Svag syra Ka=[H⁺][A⁻]/[HA] | Svag bas Kb",
-            "Konjugat par: HA/A⁻",
-            "Neutralisation: H⁺+OH⁻→H₂O  ΔH=−57 kJ/mol",
-            "Buffertar: svag syra + konjugat bas | pH=pKa+lg([A⁻]/[HA])",
+            "Sur lösning: pH < 7, överskott på H⁺",
+            "Basisk/alkalisk lösning: pH > 7, överskott på OH⁻",
+            "Neutral lösning: pH = 7 (H⁺ = OH⁻)",
+            "Starka syror: Saltsyra (HCl), svavelsyra (H₂SO₄), salpetersyra (HNO₃)",
+            "Svaga syror: Ättiksyra, citronsyra, kolsyra",
+            "Neutralisation: Syra + Bas → Salt + Vatten",
+            "Indikatorer byter färg: BTB, fenolftalein, pH-papper.",
         ],
         examples: [
-            { sv: "0,1 M HCl: [H⁺]=0,1 → pH=1 (stark syra)", vi: "100% dissociation" },
-            { sv: "0,1 M ättiksyra (Ka=1,8·10⁻⁵): [H⁺]=√(Ka·c)≈1,34·10⁻³ → pH≈2,87", vi: "Svag syra, bara ~1,3% dissocierar" },
+            { sv: "HCl + NaOH → NaCl + H₂O", vi: "Klassisk neutralisation (avger koksalt och vatten)" },
+            { sv: "Citron har lågt pH pga citronsyra", vi: "Surt (pH ca 2-3)" },
         ],
         exercises: [
-            { q: "pH för [H⁺]=3,2·10⁻⁴?", a: "pH≈3,49" },
-            { q: "[OH⁻] vid pH=11?", a: "10⁻³ mol/L" },
-            { q: "HF (Ka=7·10⁻⁴) eller CH₃COOH (Ka=1,8·10⁻⁵) – vilken là starkare?", a: "HF (större Ka → mer dissocierar)" },
+            { q: "Vilken jon gör en vattenlösning sur?", a: "Vätejonen (H⁺)" },
+            { q: "Vad händer med pH i en sur lösning om du späder den med mycket vatten?", a: "pH stiger och närmar sig 7" },
+            { q: "Nämn magens starka syra.", a: "Saltsyra (HCl)" },
+            { q: "Vilka två ämnen bildas när syra reagerar med bas?", a: "Vatten och ett salt" },
+            { q: "Om du doppar blått lackmuspapper i citronjuice, vilken färg får papperet?", a: "Röd (sur lösning)" },
+            { q: "Vad kallas en bas som fungerar som propplösare hemma?", a: "Natriumhydroxid (kaustiksoda)" }
         ]
     },
 
     {
-        id: 8, klass: "Åk 9", area: "Redoxkemi", emoji: "⚡",
-        title: "Redox: oxidationstal & halvreaktioner",
-        content: "Redox = elektronöverföring. OIL RIG. Oxidationstal anger laddningen om tất cả bindningar vore jonbindningar. Halvreaktioner balanseras separat.",
+        id: 8, klass: "Åk 9", area: "Miljökemi", emoji: "🌍",
+        title: "Miljökemi: Kolets och Kvävets kretslopp",
+        content: "Kemiska processer påverkar vår miljö extremt mycket. Växthuseffekten, försurning, och kretslopp är centrala begrepp.",
         keyPoints: [
-            "OIL: Oxidation Is Loss (ox.tal ökar) | RIG: Reduction Is Gain (minskar)",
-            "Regler: O=−2 (vanligen), H=+1 (i förening), summa=molekylens laddning",
-            "Oxidationsmedel tar e⁻ (reduceras) | Reduktionsmedel ger e⁻ (oxideras)",
-            "Sur lösning: balansera med H₂O och H⁺",
-            "Basisk lösning: balansera med H₂O och OH⁻",
-            "Galvanisk cell: spontan redox → elektricitet (Daniell: Zn|Cu)",
-            "Elektrolys: extern spänning driver icke-spontan redox",
+            "Förhöjd växthuseffekt: pga ökad halt CO₂, CH₄ (förbränning av fossila bränslen)",
+            "Försurning: SO₂ från olja bildar svavelsyra i moln → surt regn",
+            "Övergödning: Kväve och fosfor från gödsel läcker ut i sjöar",
+            "Kolkretsloppet: Fotosyntes (upptar CO₂) ⇌ Cellandning/Förbränning (avger CO₂)",
+            "Ozonlagret (O₃) i stratosfären skyddar mot UV, stördes tidigare av freoner (CFC).",
         ],
         examples: [
-            { sv: "MnO₄⁻+8H⁺+5e⁻→Mn²⁺+4H₂O (reduktion)", vi: "KMnO₄ là starkt oxidationsmedel, Mn:+7→+2" },
-            { sv: "Zn→Zn²⁺+2e⁻  Cu²⁺+2e⁻→Cu  E°cell=1,10V", vi: "Zn-anod oxideras, Cu-katod reduceras" },
+            { sv: "Kalkas sjöar", vi: "För att höja pH och rädda fisk när sjön drabbats av surt regn (neutralisation)" },
+            { sv: "Biobränslen ökar ej CO₂ totalt", vi: "Kort kolets kretslopp (det kol som binds har nyss vuxit)" },
         ],
         exercises: [
-            { q: "Ox.tal för Cr i K₂Cr₂O₇?", a: "+6" },
-            { q: "Balansera: Fe²⁺→Fe³⁺ (sur lösning)", a: "Fe²⁺→Fe³⁺+e⁻" },
-            { q: "Vilken metall là anod i Daniells element?", a: "Zink (Zn) – oxideras" },
+            { q: "Vilken gas bidrar mest till den förstärkta växthuseffekten?", a: "Koldioxid (CO₂)" },
+            { q: "Varför minskar pH i sjöarna ibland kraftigt (surt regn)?", a: "Föroreningar (svaveldioxid och kväveoxider) från förbränning reagerar med vatten i molnen" },
+            { q: "Hur motverkar man försurning i sjöar i praktiken?", a: "Genom sjökalkning (neutralisation av syran)" },
+            { q: "Vad orsakar biologisk övergödning i Östersjön?", a: "Läckage av fosfor och kväve från jordbruk (gödningsmedel)" },
+            { q: "Skillnaden mellan naturlig och förstärkt växthuseffekt?", a: "Naturlig möjliggör liv (håller värmen). Förstärkt är människoskapad och ökar medeltemperaturen för snabbt" },
+            { q: "Vad är skillnaden på ozon vid marknivå och i stratosfären?", a: "Stratosfäriskt ozon skyddar oss (UV-filter), marknära ozon är giftigt/skadligt" }
         ]
     },
 
     // ─── GYMNASIUM — Kemi 1 ──────────────────────────
     {
         id: 9, klass: "Kemi 1", area: "Stökiometri", emoji: "⚖️",
-        title: "Mol, stökiometri & gaslagar",
-        content: "Mol là kemins räkneenhet: 1 mol = Nₐ = 6,022·10²³ partiklar. Gaslagar beskriver ideala gaser. Stökiometri beräknar mängder via balanserade reaktioner.",
+        title: "Mol, substansmängd & beräkningar",
+        content: "Mol är kemins räkneenhet. Stökiometrin behandlar mass-, mol- och volymberäkningar i reaktioner via balanserade formler.",
         keyPoints: [
-            "n=m/M | c=n/V | N=n·Nₐ",
-            "Ideala gaslagen: PV=nRT  (R=8,314 J·mol⁻¹·K⁻¹)",
-            "STP (0°C, 1 atm): 22,4 L/mol",
-            "Kombinerade gaslagen: P₁V₁/T₁=P₂V₂/T₂",
-            "Avogadros lag: lika volymer gas vid cùng T,P → lika n",
-            "Begränsande reagens bestämmer produktmängd",
-            "Utbyte%=(faktisk/teoretisk)·100",
-            "Spädning: c₁V₁=c₂V₂",
+            "n = m / M (Substansmängd = massa / molmassa)",
+            "c = n / V (Koncentration = substansmängd / volym)",
+            "Nₐ = 6,022·10²³ partiklar per mol",
+            "Begränsande reaktant: den som tar slut först",
+            "Molar (M) = mol/dm³",
         ],
         examples: [
-            { sv: "250 mL 0,100 M NaOH: n=0,025 mol → m=0,025·40=1,00 g", vi: "M(NaOH)=23+16+1=40 g/mol" },
-            { sv: "2H₂+O₂→2H₂O: 5 mol H₂ + 2 mol O₂ → O₂ begränsar → 4 mol H₂O", vi: "H₂ behöver 2,5 mol O², men chỉ có 2 finns" },
+            { sv: "Beräkna massan för 0.5 mol NaOH (M=40 g/mol).", vi: "m = n × M = 0.5 × 40 = 20 g" },
+            { sv: "Spädning: c1×V1 = c2×V2", vi: "Lagom för att beräkna stamlösningars spädningsförhållanden" },
         ],
         exercises: [
-            { q: "M(H₂SO₄)?", a: "2+32+64=98 g/mol" },
-            { q: "0,5 mol CO₂ vid STP: volym?", a: "11,2 L" },
-            { q: "Spädning: 100 mL 12M HCl→1M. Volym?", a: "c₁V₁=c₂V₂: V₂=1200 mL" },
+            { q: "Beräkna molmassan för koldioxid (CO₂). C=12, O=16", a: "12 + 2×16 = 44 g/mol" },
+            { q: "Hur många mol är 36 gram vatten (H₂O, M=18)?", a: "n = m/M = 36/18 = 2.0 mol" },
+            { q: "Vad är koncentrationen om 0,1 mol salt löses i 0,5 dm³ vatten?", a: "c = n/V = 0,1/0,5 = 0,2 mol/dm³ (0,2 M)" },
+            { q: "Reaktion: 2H₂ + O₂ → 2H₂O. Du har 2 mol H₂ och 2 mol O₂. Vilken är begränsande?", a: "H₂ (Kräver bara 1 mol O₂ för att reagera med 2 mol H₂. O₂ blir över, H₂ tar slut)" },
+            { q: "Du har 100 ml 2,0 M HCl. Hur lagar du 0,5 M HCl utifrån denna?", a: "Lös ut för z: c1V1=c2V2 → 2×0,1=0,5×V2 → V2=0,4 liter. Du tillsätter alltså 300 ml vatten." },
+            { q: "Vad står bokstaven Nₐ för?", a: "Avogadros konstant (antalet molekyler i 1 mol)" }
         ]
     },
 
     {
-        id: 10, klass: "Kemi 1", area: "Termokemi", emoji: "🔥",
-        title: "Termokemi & Hess lag",
-        content: "Entalpiändring ΔH mäter värmeutbytet vid konstant tryck. Hess lag: ΔH beror ej av reaktionsvägen. Standardbildningsentalpier används för beräkning.",
+        id: 10, klass: "Kemi 1", area: "Termokemi & Reaktioner", emoji: "🔥",
+        title: "Termokemi & energiomsättning",
+        content: "Förhållandet mellan energi och kemiska reaktioner. Specifik värmekapacitet och entalpi-beräkningar.",
         keyPoints: [
-            "Exoterm: ΔH<0 (värme frigörs) | Endoterm: ΔH>0 (tas upp)",
-            "Hess lag: ΔH_total=ΣΔH_steg (additivitet)",
-            "ΔH°rxn=ΣΔHf°(produkter)−ΣΔHf°(reaktanter)",
-            "Bindningsentalpi: summa brutna − bildade bindningar",
-            "Kalorimetri: q=mcΔT (m=massa, c=specifik värmekapacitet, ΔT=temp.ändring)",
-            "c(vatten)=4,18 J·g⁻¹·K⁻¹",
+            "ΔH < 0 = Exoterm (Värme utvecklas)",
+            "ΔH > 0 = Endoterm (Värme upptas)",
+            "q = m × c × ΔT (Värmeenergin formeln)",
+            "Entalpi, H, är kemiskt bunden energi.",
         ],
         examples: [
-            { sv: "CH₄+2O₂→CO₂+2H₂O: ΔH=ΔHf°(CO₂)+2ΔHf°(H₂O)−ΔHf°(CH₄)", vi: "=(−393)+2(−286)−(−75)=−890 kJ/mol" },
-            { sv: "50g vatten värms từ 20→70°C: q=50·4,18·50=10450 J=10,45 kJ", vi: "Kalorimetriberäkning" },
+            { sv: "H₂(g) + ½O₂(g) → H₂O(l) ΔH = -286 kJ", vi: "Exotermt, mycket energi frigörs." },
+            { sv: "Is smälter: endoterm process, värme krävs.", vi: "Omgivningen blir kall om tillförd värme tas därifrån." },
         ],
         exercises: [
-            { q: "N₂+3H₂→2NH₃: ΔH=−92kJ. Exo- eller endoterm?", a: "Exoterm (ΔH<0)" },
-            { q: "Hess: A→B (ΔH=+30), B→C (ΔH=−80). A→C?", a: "ΔH=+30+(−80)=−50 kJ" },
-            { q: "100g nước, q=2kJ. ΔT?", a: "ΔT=q/(mc)=2000/(100·4,18)=4,8°C" },
+            { q: "100 g vatten värms upp från 20°C till 80°C (c=4,18 J/gK). Beräkna energi q.", a: "q = 100 × 4,18 × 60 = 25 080 J (25,08 kJ)" },
+            { q: "Är cellandning exoterm eller endoterm?", a: "Exoterm (energi utvinns ur maten)" },
+            { q: "När saltet NH₄NO₃ löses i vatten blir bägaren iskall. Vad säger detta om ΔH?", a: "ΔH > 0, reaktionen är endoterm" },
+            { q: "Varför upplevs eld som varm?", a: "Molekylens bildningsentalpier är lägre än reaktanternas, överskott släpps som energi (värme)" },
+            { q: "Termen som används för värme-förändring vid konstant tryck?", a: "Entalpi (ΔH)" }
         ]
     },
 
     {
-        id: 11, klass: "Kemi 1", area: "Reaktionskinetik", emoji: "⏱️",
-        title: "Reaktionskinetik & katalys",
-        content: "Reaktionshastigheten v=Δ[produkt]/Δt beror av temperatur, koncentration, yta och katalysatorer. Aktiveringsenergi E_a là energibarriären.",
+        id: 11, klass: "Kemi 1", area: "Analytisk", emoji: "🧪",
+        title: "Titrering och Kvantitativ Analys",
+        content: "Utnyttjande av syra-bas-reaktioner (oftast neutralisation) för att exakt ta reda på koncentrationer. Användning av utslagsgivande indikatorer.",
         keyPoints: [
-            "v=k[A]ⁿ[B]ᵐ (hastighetslag, n+m=reaktionens ordning)",
-            "k=Ae^(−Ea/RT) (Arrhenius)",
-            "Kollisionsteori: partiklar behöver đúng energi+orientering",
-            "Övergångstillstånd = aktiverat komplex (toppen av energikurvan)",
-            "Katalysator: sänker E_a, alternativ reaktionsväg, förbrukas ej",
-            "Enzym = biokemisk katalysator (proteiner)",
-            "Reaktionens ordning bestäms thực nghiệm, ej từ stökiometri",
+            "Titrator = Lösning med känd koncentration i byretten",
+            "Provlösning = Lösning med okänd koncentration i e-kolven",
+            "Ekvivalenspunkt: då substansmängden H⁺ är ekvivalent med OH⁻",
+            "c×V för syra = c×V för bas (vid förhållandet 1:1)",
         ],
         examples: [
-            { sv: "v=k[H₂][NO]² (2:a ordning i NO, 1:a i H₂, totalt 3:e)", vi: "Experimentellt bestämt, ej förutspåbart từ balanserad reaktion" },
-            { sv: "Pt-katalysator i avgasrening: 2CO+O₂→2CO₂ sker vid lägre T", vi: "Katalysatorn sänker E_a cho reaktionen" },
+            { sv: "Titrering av HCl med NaOH. Indikator BTB slår om till grönt vid EP.", vi: "Mäta volym avtappad NaOH." },
         ],
         exercises: [
-            { q: "Reaktionens ordning: v=k[A]²[B]?", a: "3:e ordning totalt (2+1)" },
-            { q: "Varför ökar k med temperatur?", a: "Arrhenius: fler kollisioner với đủ energi" },
-            { q: "Skillnad homogen/heterogen katalys?", a: "Homogen: cùng pha với reaktanter. Heterogen: pha khác (t.ex. Pt-fast)" },
+            { q: "25 ml HCl titreras med 15 ml 0,20 M NaOH (1:1 förhållande). Vad är klorvätesyrans c?", a: "n(NaOH)=0,015 × 0,20 = 0,003 mol = n(HCl). c(HCl)=0,003/0,025=0,12 M" },
+            { q: "Vilken indikator rekommenderas om ekvivalenspunkten ligger nära pH 8?", a: "Fenolftalein" },
+            { q: "Hur ser du att titreringen är färdig?", a: "Indikatorn genomgår en snabb färgförändring" },
+            { q: "Om du har svavelsyra (H₂SO₄) vs NaOH, vad är molförhållandet?", a: "1 mol syra kräver 2 mol bas (pga två protoner)" }
         ]
     },
 
     // ─── GYMNASIUM — Kemi 2 ──────────────────────────
     {
-        id: 12, klass: "Kemi 2", area: "Jämviktslära", emoji: "⇌",
-        title: "Kemisk jämvikt & Le Chatelier",
-        content: "Dynamisk jämvikt: fram- och bakreaktionshastigheter lika. Kc uttrycker jämviktsläget. Le Chatelier förutsäger respons trên störningar.",
+        id: 12, klass: "Kemi 2", area: "Reaktionskinetik", emoji: "⏱️",
+        title: "Reaktionshastighet",
+        content: "Mäter hur snabbt reaktioner förlöper, dvs koncentrationsförändring över tid. Påverkas av kollisioner.",
         keyPoints: [
-            "Kc=[P]ᵖ[Q]q/[A]ᵃ[B]ᵇ  (stökiometriska exponenter)",
-            "Kp=Kc·(RT)^Δn  (gasfasreaktioner)",
-            "Q<K: mot produkter | Q>K: mot reaktanter | Q=K: jämvikt",
-            "Le Chatelier: +c(reaktant)→mer produkt | +T(exoterm)→mot reaktanter | +P→färre gasmol",
-            "Ksp=[Aⁿ⁺]ᵐ[Bᵐ⁻]ⁿ  (löslighetsprodukten)",
-            "Haberprocessen: N₂+3H₂⇌2NH₃  ΔH=−92kJ | Kompromiss ~400°C, 200atm",
-            "Henderson-Hasselbalch: pH=pKa+lg([A⁻]/[HA])",
+            "Kollisionsteorin: Atomer måste krocka med rätt energi OCH rätt vinkel.",
+            "Faktorer som påverkar: Temperatur (T), Koncentration (c), Finfördelning (kontaktyta), Katalysator.",
+            "Hälften av partiklarna får tillräcklig aktiveringsenergi när T höjs (typiskt dubblad hastighet per 10 grader)",
+            "Mätningsmetoder: färgändring, volym gas per tidsenhet, pH-sänkning.",
         ],
         examples: [
-            { sv: "PCl₅⇌PCl₃+Cl₂ (ΔH>0): +T→mer PCl₃, +P→mer PCl₅", vi: "Le Chatelier: systemet motverkar störningen" },
-            { sv: "Ksp(AgCl)=1,8·10⁻¹⁰: s=√(1,8·10⁻¹⁰)≈1,3·10⁻⁵ mol/L", vi: "Lösligheten trong nước cất" },
+            { sv: "Dammexplosion i en mjölkvarn", vi: "På grund av enorm kontaktyta hos pulvret" },
+            { sv: "Lösa ett sockerbett går snabbast i hett te.", vi: "Högre rörelseenergi ger fler starka kollisioner" },
         ],
         exercises: [
-            { q: "Kc=0,04 för H₂+I₂⇌2HI. Tolka.", a: "K<1 → reaktanter gynnas" },
-            { q: "Skriv Kc för 2SO₂+O₂⇌2SO₃", a: "[SO₃]²/([SO₂]²[O₂])" },
-            { q: "Tại sao Haberprocessen ~400°C och không thấp hơn?", a: "Kinetik: reaktionen för långsam vid lägre T trots bättre jämvikt" },
+            { q: "Varför brinner stålull men en massiv stålbit av järn inte lika lätt (med tändsticka)?", a: "Finfördelning/kontaktytan är enorm hos stålull, vilket ger mycket fler framgångsrika kollisioner med syre per sekund" },
+            { q: "Hur minskar en biologisk katalysator aktiveringsenergin?", a: "Enzym (proteiner) har passform som tvingar molekylerna i rätt kontaktvinkel / böjer bindningarna" },
+            { q: "Vilka enheter mäter man kemisk reaktionshastighet i vanligen?", a: "M / s (mol dm⁻³ s⁻¹)" },
+            { q: "Varför sker reaktionen snabbare vid högre koncentration?", a: "Fler molekyler per volymenhet ger större sannolikhet att de krockar (kollision)!" },
+            { q: "Rita en entalpikurva för en exoterm process utan och med katalysator. Vad ändras?", a: "Toppen / aktiveringsenergin (puckeln) blir lägre, men ΔH mellan start och mål är oförändrad" }
         ]
     },
 
     {
-        id: 13, klass: "Kemi 2", area: "Elektrokemi", emoji: "🔋",
-        title: "Elektrokemi: cellpotential & elektrolys",
-        content: "Galvaniska celler: spontan redox → elektricitet. Elektrolys: elektricitet → kemisk reaktion. Nernst-ekvationen korrigerar cho icke-standardförhållanden.",
+        id: 13, klass: "Kemi 2", area: "Kemisk Jämvikt", emoji: "⇌",
+        title: "Kemisk Jämvikt & Massverkans Lag",
+        content: "En del reaktioner går inte till 100%. De är reversibla och bildar dynamiska jämviktssystem. Beskrivs med uttrycket K.",
         keyPoints: [
-            "E°cell=E°katod−E°anod  (reduktionspotentialer)",
-            "ΔG°=−nFE°  (F=96485 C·mol⁻¹)",
-            "Nernst: E=E°−(0,0592/n)·lg Q  (vid 25°C)",
-            "Faradays 1:a: m=M·Q/(n·F)=M·I·t/(n·F)",
-            "Faradays 2:a: vid cùng điện tích: m∝M/n",
-            "Elektrolys của nước: 2H₂O→2H₂+O₂  (E°=+1,23V)",
-            "Korrosion: Fe→Fe²⁺+2e⁻ (anod), galvanisering = Zn-offranode",
+            "K (Jämviktskonstanten) = [Produkterna] / [Reaktanterna] (Massverkans lag)",
+            "Om K >> 1 gäller jämvikten åt produkternas håll.",
+            "Om K << 1 gäller jämvikten åt reaktanternas håll.",
+            "Le Chateliers princip: Om system i jämvikt störs, förskjuts det så störningen motverkas.",
         ],
         examples: [
-            { sv: "Daniell: E°cell=0,34−(−0,76)=1,10V  ΔG°=−2·96485·1,10=−212kJ", vi: "Spontan (ΔG°<0)" },
-            { sv: "Elektrolys Cu²⁺: I=5A, t=30min → Q=9000C → m=63,5·9000/(2·96485)=2,96g", vi: "Faradays lag" },
+            { sv: "Haber-Bosch: N₂ + 3H₂ ⇌ 2NH₃ (gas)", vi: "Om trycket ökar, förskjuts jämvikten åt höger mot färre gas-mol (2 mot 4)." },
         ],
         exercises: [
-            { q: "E°cell: Ni|Ni²⁺||Ag⁺|Ag? E°Ni=−0,25, E°Ag=+0,80", a: "0,80−(−0,25)=1,05V" },
-            { q: "Elektrolys Al³⁺, I=10A, 1h. Massa Al?", a: "m=27·36000/(3·96485)≈3,36g" },
-            { q: "Varför skyddar zink järn?", a: "Zn có E° thấp hơn → oxideras ưu tiên (offranode)" },
+            { q: "H₂ + I₂ ⇌ 2HI, skriv K.", a: "K = [HI]² / ([H₂]*[I₂])" },
+            { q: "Process är EXOTERM (A + B ⇌ C + Värme). Vad sker med K om Temperaturen höjs?", a: "Reaktionen förskjuts åt vänster för att bli av med värmen → Mindre produkt → Konstant K minskar." },
+            { q: "Samma ekvation: Vad sker om du kontinuerligt suger bort C?", a: "Enligt Le Chatelier går reaktionen snabbt åt höger och tillverkar mer C" },
+            { q: "Om is smälter till vatten... ÄR detta Le Chatelier?", a: "Ja om du tillför värmen tvingas is smälta för att absorbera den" },
+            { q: "För vad är pKa och Ka särskilt anpassade för lösningsvarianter av jämvikter?", a: "Syrakonstanten för en svag syra (anpassad term för utvärderingen)" }
         ]
     },
 
     {
-        id: 14, klass: "Kemi 2", area: "Organisk kemi II", emoji: "🔬",
-        title: "Reaktionsmekanismer & polymerer",
-        content: "Mekanistisk organisk kemi: nukleofil/elektrofil addition, substitution (Sₙ1/Sₙ2), eliminering. Polymerer: addition- och kondensationspolymerisation.",
+        id: 14, klass: "Kemi 2", area: "Organisk & Biokemi", emoji: "🧪",
+        title: "Fördjupad Organisk Kemi, Isomeri, Makromolekyler",
+        content: "Organiska reaktioner (substitution, addition). Strukturisomeri, Stereoisomeri. Polypeptider, Fetter och Kolhydrater.",
         keyPoints: [
-            "Nukleofil: giàu electron, tấn công elektrofilt centrum (t.ex. OH⁻, CN⁻)",
-            "Elektrofil: nghèo electron, tấn công nukleofilt centrum (t.ex. H⁺, Br₂)",
-            "Sₙ2: backside attack, inverterar stereokemi, bậc 2",
-            "Sₙ1: karbokatjon-intermediär, racemisering, bậc 1",
-            "Additionspolymerisation: n CH₂=CH₂ → (−CH₂−CH₂−)ₙ  (polyeten)",
-            "Kondensationspolymerisation: monomerer mất H₂O/HCl (nylon, polyester)",
+            "Stereoisomeri: Cis-trans isomeri (i dubbelbindningar) respektive Optisk isomeri (kirala kol med fyra olika gupper bundna).",
+            "Sₙ1 vs Sₙ2 nukleofil substitution.",
+            "Oxidation av alkoholer: Primär alkohol → Aldehyd → Karboxylsyra. Sekundär → Keton. (Tertiär kan ej ox).",
+            "Ester = Alkoholl + Karboxylsyra → (Smultmondoft)",
+            "Proteiner styrs av sidokedjorna hos aminosyror (intermolekylära krafter)",
         ],
         examples: [
-            { sv: "CH₃Br + OH⁻ → CH₃OH + Br⁻  (Sₙ2, direktinversion)", vi: "Metylbromid + hydroxid → metanol + bromidjon" },
-            { sv: "n(CH₂=CHCN) → (−CH₂−CH(CN)−)ₙ  = Polyakrylnitril (PAN)", vi: "Additionspolymerisation, dùng trong dệt may" },
+            { sv: "Mjölksyra har optiska isomerer: D-mjölksyra respektive L-mjölksyra", vi: "De är spegelbilder av varandra pga ett assymetriskt kol." },
         ],
         exercises: [
-            { q: "Sₙ1 hay Sₙ2 cho t-butylklorid+OH⁻?", a: "Sₙ1 – tertiärt kol, stabilt karbokatjon" },
-            { q: "Monomer cho polyeten?", a: "Eten CH₂=CH₂" },
-            { q: "Khác biệt giữa additions- hay kondensationspolymer?", a: "Addition: không có sản phẩm phụ. Kondensation: mất H₂O hay HCl" },
+            { q: "Rita / tänk cis-2-buten vs trans-2-buten. Vad skiljer smält/kokpunkt?", a: "Mindre symetrisk i geometrin (cis) har ofta annorlunda polaritet och därmed smältpunkt pga dipol-dipol" },
+            { q: "Vad bildas om propan-2-ol oxideras måttligt?", a: "En keton (propanon = aceton)" },
+            { q: "En ester används för doft. Etansyra + etanol luktar kemikalie...? Namn?", a: "Etyletanoat (etylester, etylacetat)" },
+            { q: "När proteiner koagulerar pga syra/värme, vad kallas processen?", a: "Denaturering" },
+            { q: "Skillnaden Sₙ1 och Sₙ2?", a: "Små snabba atomer vänder paraplyt på ett steg (Sₙ2). Steg i två med karbokatjon (Sₙ1)" },
+            { q: "Vilken funktionell grupp ger frukter starka kemiska dofter?", a: "Estern (COO-grupp)" }
         ]
-    },
-
-    // ─── TILLÄGG: Åk 7-9 Kemi bổ sung ──────────
-    {
-        id: 15, klass: "Åk 7", area: "Grundkemi", emoji: "🌡️",
-        title: "Fasövergångar & lösningar",
-        content: "Ämnen finns i tre aggregationstillstånd: fast, flytande, gas. Fasövergångar sker vid nhiệt độ cụ thể. Löslighet beror của lösningsmedel, nhiệt độ hay áp suất.",
-        keyPoints: [
-            "Smältpunkt (fast→flytande) | Kokpunkt (flytande→gas) | Sublimation (fast→gas)",
-            "Kondensation (gas→flytande) | Stelning (flytande→fast) | Deposition (gas→fast)",
-            "Lösning: lösningsmedel + löst ämne | Löslig/olöslig",
-            "Löslighet ökar với T (fasta ämnen i vatten, vanligen)",
-            "Gas: löslighet giảm khi T tăng (đồ uống) | Henrys lag",
-            "Koncentration: c=n/V (mol/L) | Masskoncentration: ρ=m/V (g/L)",
-        ],
-        examples: [
-            { sv: "Is → vatten → ånga: 0°C och 100°C vid 1 atm", vi: "Vatten có những đặc tính kỳ diệu nhờ liên kết hydro" },
-            { sv: "NaCl(s) → Na⁺(aq) + Cl⁻(aq)  (hòa tan trong nước)", vi: "Jonföreningar dissocierar i vatten" },
-        ],
-        exercises: [
-            { q: "Quá trình gas→fast trực tiếp gọi là gì?", a: "Deposition (t.ex. rimfrost)" },
-            { q: "Tại sao đồ uống có gas sủi bọt nhiều hơn khi lạnh?", a: "CO₂ tan tốt hơn ở nhiệt độ thấp (Henrys lag)" },
-            { q: "Molaritet là gì?", a: "Nồng độ mol/L (c=n/V)" },
-        ]
-    },
-
-    {
-        id: 16, klass: "Åk 9", area: "Kärn- och strålningskemi", emoji: "☢️",
-        title: "Radioaktivitet & kärnreaktioner",
-        content: "Radioaktivitet: instabila atomkärnor phân rã tự phát. Alpha-, beta-, gammastrålning. Halveringstid. Fission hay fusion.",
-        keyPoints: [
-            "Alpha (α): ⁴He-kärna, tầm ngắn, bị chặn bởi giấy",
-            "Beta (β⁻): electron, tầm trung, bị chặn bởi nhôm | β⁺: positron",
-            "Gamma (γ): bức xạ điện từ, năng lượng cao, bị chặn bởi chì/bê tông",
-            "Halveringstid T½: thời gian để phân nửa lượng chất phân rã",
-            "N(t)=N₀·(½)^(t/T½) = N₀·e^(−λt)",
-            "Kärnklyvning (fission): hạt nhân nặng + neutron → 2 hạt nhân trung bình + năng lượng",
-            "Kärnfusion: 2 hạt nhân nhẹ → nặng hơn + năng lượng (mặt trời)",
-            "Aktivitet A=λ·N (Becquerel, Bq)",
-        ],
-        examples: [
-            { sv: "¹⁴C → ¹⁴N + β⁻ + ν̄  (koldatering T½=5730 år)", vi: "Dùng để xác định tuổi vật hữu cơ lên tới ~50 000 năm" },
-            { sv: "²³⁵U + n → ⁹²Kr + ¹⁴¹Ba + 3n + năng lượng (fission)", vi: "Neutron kích hoạt phản ứng dây chuyền trong nhà máy điện hạt nhân" },
-        ],
-        exercises: [
-            { q: "T½=30 năm. Còn lại bao nhiêu sau 90 năm?", a: "(½)³=1/8 lượng ban đầu" },
-            { q: "Bức xạ nào nguy hiểm nhất khi ở trong cơ thể?", a: "Alpha (khả năng ion hóa cao, tầm ngắn trong mô)" },
-            { q: "Khác biệt giữa fission hay fusion?", a: "Fission: hạt nhân nặng bị chia tách. Fusion: hạt nhân nhẹ hợp nhất" },
-        ]
-    },
-
-    {
-        id: 17, klass: "Kemi 1", area: "Biokemi (intro)", emoji: "🧬",
-        title: "Biokemi: kolhydrater, proteiner & fetter",
-        content: "Livets kemiska byggstenar. Kolhydrater cho năng lượng. Proteiner xây dựng tế bào. Fetter dự trữ năng lượng hay tạo màng tế bào.",
-        keyPoints: [
-            "Kolhydrater CₙH₂ₙOₙ: monosackarider (glukos C₆H₁₂O₆), disackarider, polysackarider",
-            "Fotosyntesen: 6CO₂+6H₂O → C₆H₁₂O₆+6O₂  ΔH=+2803 kJ",
-            "Cellandning: C₆H₁₂O₆+6O₂ → 6CO₂+6H₂O  ΔH=−2803 kJ",
-            "Aminosyror: H₂N−CH(R)−COOH | 20 chuẩn aminosyror",
-            "Peptidbindning: −CO−NH− hình thành khi kondensation",
-            "Proteinfaltning: primär → sekundär → tertiär → kvartär",
-            "Lipider: triglycerider = glycerol + 3 fettsyror",
-            "Enzymer: chất xúc tác sinh học",
-        ],
-        examples: [
-            { sv: "Glukos + fruktose → sackaros + H₂O (kondensation)", vi: "Phản ứng ngược lại = hydrolys (tiêu hóa)" },
-            { sv: "Alanin+Glycin → Ala-Gly + H₂O (peptidbindning)", vi: "Protein là chuỗi dài aminosyror liên kết peptid" },
-        ],
-        exercises: [
-            { q: "Phản ứng tổng quát của quang hợp là gì?", a: "6CO₂+6H₂O→C₆H₁₂O₆+6O₂" },
-            { q: "Khác biệt giữa chất béo no hay không no?", a: "Mättat: không có liên kết đôi (rắn). Omättat: có liên kết đôi (lỏng)" },
-            { q: "Enzym có tác dụng gì?", a: "Giảm năng lượng kích hoạt cho phản ứng sinh hóa" },
-        ]
-    },
-
-    {
-        id: 18, klass: "Kemi 2", area: "Analytisk kemi", emoji: "🔭",
-        title: "Analytisk kemi & spektroskopi",
-        content: "Analytisk kemi identifierar hay kvantifierar ämnen. Spektroskopiska metoder dùng tương tác ánh sáng-vật chất.",
-        keyPoints: [
-            "Kvantitativ analys: titration, gravimetri, spektrofotometri",
-            "Titrering: biết nồng độ (titrant) cho vào cho đến điểm tương đương",
-            "n(syra)·z_a = n(bas)·z_b  tại điểm tương đương",
-            "Beer-Lamberts lag: A=ε·c·l",
-            "IR-spektroskopi: rung động phân tử giúp định danh nhóm chức",
-            "NMR: spin hạt nhân trong từ trường giúp xác định cấu trúc carbon",
-            "MS (masspektrometri): tỷ lệ m/z cho khối lượng mol hay mảnh vỡ",
-            "Kromatografi (GC, HPLC): tách và định danh hỗn hợp",
-        ],
-        examples: [
-            { sv: "25,0 mL HCl titreras med 0,100 M NaOH, åtgång 18,5 mL → c(HCl)=?", vi: "n(NaOH)=0,00185 mol = n(HCl) → c=0,074 M" },
-        ],
-        exercises: [
-            { q: "20,0 mL 0,100M HCl được trung hòa bởi NaOH 0,200M. Thể tích?", a: "c₁V₁=c₂V₂: V₂=10,0 mL" },
-            { q: "Phương pháp quang phổ nào định danh nhóm chức?", a: "IR-spektroskopi" },
-            { q: "Định luật Beer-Lambert đo cái gì?", a: "Mối liên hệ hấp thụ–nồng độ: A=ε·c·l" },
-        ]
-    },
+    }
 ];

@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { T, getCatColor } from "../constants/theme";
 import { speakSv } from "../services/api";
 import { dbAdd, dbPut, dbDelete } from "../services/db";
 import { WordDetailModal, AddWordModal, EditWordModal, TagManagerModal } from "../components/Modals";
-import { SvFlag } from "../components/SvFlag";
-import { VnFlag } from "../components/VnFlag";
-import { UkFlag } from "../components/UkFlag";
+// import { SvFlag } from "../components/SvFlag";
+// import { VnFlag } from "../components/VnFlag";
+// import { UkFlag } from "../components/UkFlag";
 
 export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     const [search, setSearch] = useState("");
@@ -16,6 +16,47 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     const [editWord, setEditWord] = useState(null);
     const [selected, setSelected] = useState(new Set());
     const [selMode, setSelMode] = useState(false);
+    const [vHistory, setVHistory] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("puniya_vocab_history") || "[]"); }
+        catch { return []; }
+    });
+    const [showVSug, setShowVSug] = useState(false);
+    const [vSugs, setVSugs] = useState([]);
+    const isLP = useRef(false);
+
+    useEffect(() => {
+        localStorage.setItem("puniya_vocab_history", JSON.stringify(vHistory));
+    }, [vHistory]);
+
+    function handleVocabSearchChange(val) {
+        setSearch(val);
+        if (!val.trim()) {
+            if (vHistory.length > 0) {
+                setVSugs(vHistory);
+                setShowVSug(true);
+            } else {
+                setShowVSug(false);
+            }
+        } else {
+            setShowVSug(false);
+        }
+    }
+
+    function doVocabSearch(term) {
+        setSearch(term);
+        setShowVSug(false);
+        if (!term.trim()) return;
+        setVHistory(prev => {
+            const newH = [term, ...prev.filter(h => h !== term)].slice(0, 10);
+            return newH;
+        });
+    }
+
+    function removeVHistoryItem(e, item) {
+        e.stopPropagation();
+        setVHistory(prev => prev.filter(h => h !== item));
+    }
+
     const pressRef = useRef(null);
 
     const vpCats = ["Tất cả", ...new Set(vocab.flatMap((v) => v.categories || (v.category ? [v.category] : [])))];
@@ -28,7 +69,9 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     });
 
     function startPress(id) {
+        isLP.current = false;
         pressRef.current = setTimeout(() => {
+            isLP.current = true;
             setSelMode(true);
             toggleSel(id);
         }, 500);
@@ -47,13 +90,21 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     }
 
     function handleTap(word) {
+        if (isLP.current) {
+            isLP.current = false;
+            return;
+        }
         if (selMode) {
             toggleSel(word.id);
-            if (selected.size === 0) setSelMode(false);
         } else {
             setDetail(word);
         }
     }
+
+
+    useEffect(() => {
+        if (selected.size === 0) setSelMode(false);
+    }, [selected]);
 
     async function deleteSelected() {
         if (!confirm(`Xóa ${selected.size} từ đã chọn?`)) return;
@@ -63,15 +114,20 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
         setSelMode(false);
     }
 
-    async function addTagsToSelected(newTags) {
+    async function bulkUpdateTags(tagNames, action = "add") {
         const updatedVocab = [...vocab];
         for (const id of selected) {
             const idx = updatedVocab.findIndex(v => v.id === id);
             if (idx !== -1) {
                 const item = updatedVocab[idx];
                 const currentCats = item.categories || (item.category ? [item.category] : []);
-                const merged = [...new Set([...currentCats, ...newTags.map(t => t.name)])];
-                const updatedItem = { ...item, categories: merged, category: merged[0] || "" };
+                let nextCats;
+                if (action === "add") {
+                    nextCats = [...new Set([...currentCats, ...tagNames])];
+                } else {
+                    nextCats = currentCats.filter(c => !tagNames.includes(c));
+                }
+                const updatedItem = { ...item, categories: nextCats, category: nextCats[0] || "" };
                 await dbPut("vocab", updatedItem);
                 updatedVocab[idx] = updatedItem;
             }
@@ -79,9 +135,18 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
         setVocab(updatedVocab);
         setSelected(new Set());
         setSelMode(false);
+        setEditWord(null);
     }
 
     async function handleSaveNew(data) {
+        const newSv = data.sv.trim().toLowerCase();
+        const exists = vocab.some(v => v.sv.trim().toLowerCase() === newSv);
+
+        if (exists) {
+            alert(`⚠️ Từ "${data.sv}" đã có trong sổ tay của bạn rồi!`);
+            return;
+        }
+
         const entry = { ...data, createdAt: Date.now() };
         const id = await dbAdd("vocab", entry);
         setVocab((prev) => [...prev, { ...entry, id }]);
@@ -118,24 +183,55 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
     return (
         <div className="main">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 13 }}>
+
+
+            <div style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 13, display: selMode ? "none" : "flex" }}>
                 <div className="sec-title" style={{ marginBottom: 0 }}>📚 Sổ tay từ vựng ({vpFiltered.length})</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <button className="btn btn-s" style={{ height: 42, padding: "0 14px", display: "flex", gap: 6, fontSize: 13 }} onClick={() => setShowTagMgr(true)}>
                         🏷️ <span style={{ fontWeight: 800 }}>Quản lý nhãn</span>
                     </button>
-                    {!selMode && <button className="btn btn-p" style={{ padding: "0 16px", borderRadius: 12, height: 42, fontSize: 13 }} onClick={() => setShowAdd(true)}>+ Thêm từ</button>}
+                    <button className="btn btn-p" style={{ padding: "0 16px", borderRadius: 12, height: 42, fontSize: 13 }} onClick={() => setShowAdd(true)}>+ Thêm từ</button>
                 </div>
             </div>
 
-            <div className="s-wrap">
+            <div className="s-wrap" style={{ position: "relative" }}>
                 <span className="s-ico">🔍</span>
-                <input className="inp inp-ico" placeholder="Tìm từ, nghĩa hoặc nhãn..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <input
+                    className="inp inp-ico"
+                    placeholder="Tìm từ Thuỵ Điển hoặc nghĩa tiếng Việt..."
+                    value={search}
+                    onChange={(e) => handleVocabSearchChange(e.target.value)}
+                    onFocus={() => {
+                        if (!search.trim() && vHistory.length > 0) {
+                            setVSugs(vHistory);
+                            setShowVSug(true);
+                        }
+                    }}
+                    onBlur={() => setTimeout(() => setShowVSug(false), 200)}
+                    onKeyDown={(e) => e.key === "Enter" && doVocabSearch(search)}
+                    autoComplete="off"
+                />
+                {showVSug && (
+                    <div className="sug-wrap" style={{ top: "100%", zIndex: 100 }}>
+                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: T.pink, display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border} ` }}>
+                            <span>🕒 TÌM KIẾM GẦN ĐÂY</span>
+                            <span onMouseDown={(e) => { e.preventDefault(); setVHistory([]); }} style={{ cursor: "pointer", opacity: 0.8 }}>Xoá hết</span>
+                        </div>
+                        {vSugs.map((v, i) => (
+                            <div key={i} className="sug-item" onMouseDown={(e) => { e.preventDefault(); doVocabSearch(v); }}>
+                                <span style={{ marginRight: 10, opacity: 0.5 }}>🕒</span>
+                                {v}
+                                <span onMouseDown={(e) => { e.preventDefault(); removeVHistoryItem(e, v); }} style={{ float: "right", padding: "0 5px", color: T.pink, opacity: 0.5 }}>×</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="tabs" style={{ marginBottom: 18 }}>
                 {vpCats.map((c) => (
-                    <div key={c} className={`tab ${cat === c ? "active" : ""}`} onClick={() => setCat(c)}>{c || "Chung"}</div>
+                    <div key={c} className={`tab ${cat === c ? "active" : ""} `} onClick={() => setCat(c)}>{c || "Chung"}</div>
                 ))}
             </div>
 
@@ -154,7 +250,19 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                                 onTouchStart={() => startPress(v.id)}
                                 onTouchEnd={cancelPress}
                                 onClick={() => handleTap(v)}
+                                style={{ position: "relative" }}
                             >
+                                {selMode && (
+                                    <div style={{
+                                        width: 22, height: 22, borderRadius: "50%",
+                                        border: `2px solid ${isS ? T.pink : "#cbd5e1"} `,
+                                        background: isS ? T.pink : "transparent",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        color: "white", fontSize: 12, flexShrink: 0
+                                    }}>
+                                        {isS && "✓"}
+                                    </div>
+                                )}
                                 <div style={{ flex: 1 }}>
                                     <div style={{ fontSize: 18, fontWeight: 900, color: T.pink, display: "flex", alignItems: "baseline", gap: 8, lineHeight: 1.2 }}>
                                         {v.sv}
@@ -221,17 +329,18 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
             </div>
 
             {selMode && (
-                <div className="sel-actions">
-                    <button className="btn btn-s" style={{ flex: 1, height: 46 }} onClick={() => { setSelMode(false); setSelected(new Set()); }}>Đóng</button>
-                    <button className="btn" style={{ flex: 1.2, background: "#f1f5f9", height: 46 }} onClick={() => setEditWord({ multiTag: true })}>🏷️ Nhãn</button>
-                    <button className="btn" style={{ flex: 1, background: "#fee2e2", color: "#ef4444", height: 46 }} onClick={deleteSelected}>🗑️ Xóa</button>
+                <div className="sel-actions" style={{ bottom: 80, padding: "10px 15px", gap: 8, maxWidth: "450px", width: "94%" }}>
+                    <button className="btn btn-s" style={{ padding: "0 10px", height: 40, fontSize: 11 }} onClick={() => { setSelMode(false); setSelected(new Set()); }}>Đóng</button>
+                    <button className="btn" style={{ flex: 1, background: "#f1f5f9", height: 40, fontSize: 11, fontWeight: 700, color: T.text }} onClick={() => setEditWord({ multiTag: true, mode: "remove" })}>✖ Gỡ nhãn</button>
+                    <button className="btn" style={{ flex: 1, background: T.pinkP, height: 40, fontSize: 11, fontWeight: 700, color: T.pink }} onClick={() => setEditWord({ multiTag: true, mode: "add" })}>➕ Thêm nhãn</button>
+                    <button className="btn" style={{ padding: "0 10px", background: "#fee2e2", color: "#ef4444", height: 40, fontSize: 11 }} onClick={deleteSelected}>Xóa</button>
                 </div>
             )}
 
             {showAdd && <AddWordModal tags={tags} onClose={() => setShowAdd(false)} onSave={handleSaveNew} />}
             {detail && <WordDetailModal tags={tags} word={detail} onClose={() => setDetail(null)} onDelete={handleDelete} onEdit={() => setEditWord(detail)} onStar={handleStar} />}
             {editWord && !editWord.multiTag && <EditWordModal tags={tags} word={editWord} onClose={() => setEditWord(null)} onSave={handleEdit} />}
-            {editWord && editWord.multiTag && <EditWordModal tags={tags} isMulti onClose={() => setEditWord(null)} onSave={addTagsToSelected} />}
+            {editWord && editWord.multiTag && <EditWordModal tags={tags} isMulti multiMode={editWord.mode} onClose={() => setEditWord(null)} onSave={bulkUpdateTags} />}
             {showTagMgr && <TagManagerModal tags={tags} setTags={setTags} onClose={() => setShowTagMgr(false)} />}
         </div>
     );

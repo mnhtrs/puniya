@@ -11,22 +11,46 @@ import MatematikPage from "./MatematikPage";
 import KemiPage from "./KemiPage";
 import SkillsPage from "./SkillsPage";
 
-const SAMPLE_WORDS = [
-    { sv: "hej", vi: "xin chào", category: "Cơ bản", aiData: { ipa: "/hɛj/", pronunciation: "hây" } },
-    { sv: "tack", vi: "cảm ơn", category: "Cơ bản", aiData: { ipa: "/takː/", pronunciation: "tắc" } },
-    { sv: "förstår", vi: "hiểu", category: "Động từ", aiData: { ipa: "/fœˈstɔːr/", pronunciation: "phơ-stoa" } },
-    { sv: "välkommen", vi: "chào mừng", category: "Cơ bản", aiData: { ipa: "/ˈvɛlˌkɔmːɛn/", pronunciation: "vel-cô-men" } },
-    { sv: "Sverige", vi: "Thụy Điển", category: "Địa lý", aiData: { ipa: "/ˈsvɛrjɛ/", pronunciation: "svê-ri-ê" } },
-];
+// const SAMPLE_WORDS = [
+//     { sv: "hej", vi: "xin chào", category: "Cơ bản", aiData: { ipa: "/hɛj/", pronunciation: "hây" } },
+//     { sv: "tack", vi: "cảm ơn", category: "Cơ bản", aiData: { ipa: "/takː/", pronunciation: "tắc" } },
+//     { sv: "förstår", vi: "hiểu", category: "Động từ", aiData: { ipa: "/fœˈstɔːr/", pronunciation: "phơ-stoa" } },
+//     { sv: "välkommen", vi: "chào mừng", category: "Cơ bản", aiData: { ipa: "/ˈvɛlˌkɔmːɛn/", pronunciation: "vel-cô-men" } },
+//     { sv: "Sverige", vi: "Thụy Điển", category: "Địa lý", aiData: { ipa: "/ˈsvɛrjɛ/", pronunciation: "svê-ri-ê" } },
+// ];
 
 export default function HomePage({ vocab, setVocab, streak, goHome }) {
-    const [sec, setSec] = useState("home");
+    const [sec, setSec] = useState(() => {
+        return new URLSearchParams(window.location.search).get("q") ? "dict" : "home";
+    });
     const [dailyWord, setDailyWord] = useState(null);
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        const handlePop = () => {
+            const q = new URLSearchParams(window.location.search).get("q");
+            if (q) setSec("dict");
+            else setSec("home");
+        };
+        const resetHome = () => {
+            setSec("home");
+            if (window.location.search) {
+                const url = new URL(window.location);
+                url.searchParams.delete("q");
+                window.history.pushState({}, "", url);
+            }
+        };
+        window.addEventListener("popstate", handlePop);
+        window.addEventListener("goHomeSignal", resetHome);
+        return () => {
+            window.removeEventListener("popstate", handlePop);
+            window.removeEventListener("goHomeSignal", resetHome);
+        };
     }, []);
 
     const timeStr = time.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
@@ -69,15 +93,15 @@ export default function HomePage({ vocab, setVocab, streak, goHome }) {
         <div className="main">
             <div className="card card-g" style={{ padding: "20px 24px" }}>
                 <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Chào mừng trở lại! 🌸</div>
+                    <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Chào mừng trở lại!</div>
                     <div style={{ fontSize: 13, color: T.text, fontWeight: 700, lineHeight: 1.7, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <SvFlag size={16} /> <span style={{ color: T.pink, fontWeight: 900 }}>{clockAndDate}</span>
                     </div>
                 </div>
                 <div style={{ display: "flex", gap: 20, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-                    <div style={{ fontSize: 14 }}>🎯 <strong>{total}</strong> <span style={{ color: T.textL }}>từ đã lưu</span></div>
-                    <div style={{ fontSize: 14 }}>🔥 <strong>{streak}</strong> <span style={{ color: T.textL }}>ngày</span></div>
-                    <div style={{ fontSize: 14 }}>⭐ <strong>{vocab.filter((v) => v.starred).length}</strong> <span style={{ color: T.textL }}>yêu thích</span></div>
+                    <div style={{ fontSize: 15 }}>🎯 <strong>{total}</strong> <span style={{ color: T.textL }}>từ đã lưu</span></div>
+                    <div style={{ fontSize: 15 }}>🔥 <strong>{streak}</strong> <span style={{ color: T.textL }}>ngày</span></div>
+                    <div style={{ fontSize: 15 }}>⭐ <strong>{vocab.filter((v) => v.starred).length}</strong> <span style={{ color: T.textL }}>yêu thích</span></div>
                 </div>
             </div>
 

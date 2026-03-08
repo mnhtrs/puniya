@@ -60,6 +60,46 @@ export default function App() {
         init();
     }, []);
 
+    // Setup Push Notifications
+    useEffect(() => {
+        let intervalId;
+        const checkNotif = async () => {
+            const enabled = localStorage.getItem("puniya_notif") === "true";
+            const mins = parseFloat(localStorage.getItem("puniya_notif_min")) || 30;
+            if (intervalId) clearInterval(intervalId);
+
+            if (enabled && mins > 0 && "Notification" in window && Notification.permission === "granted") {
+                intervalId = setInterval(async () => {
+                    const allVocab = await dbGetAll("vocab");
+                    if (allVocab.length > 0) {
+                        const word = allVocab[Math.floor(Math.random() * allVocab.length)];
+                        new Notification("Puniya - Ôn bài nào! 🌟", {
+                            body: `Bạn còn nhớ từ "${word.sv}" nghĩa là "${word.vi}" không?`,
+                            icon: "/hachiware.png"
+                        });
+                    }
+                }, mins * 60 * 1000);
+            }
+        };
+
+        checkNotif();
+        window.addEventListener("notifSettingsChanged", checkNotif);
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+            window.removeEventListener("notifSettingsChanged", checkNotif);
+        };
+    }, []);
+
+    const goHomeAndReset = () => {
+        setTab("home");
+        window.dispatchEvent(new CustomEvent("goHomeSignal"));
+    };
+
+    const handleTabChange = (t) => {
+        if (t === "home") window.dispatchEvent(new CustomEvent("goHomeSignal"));
+        setTab(t);
+    };
+
     async function handleImport(newVocab, newStreak, newTags = []) {
         setLoading(true);
         // Clean old DB
@@ -103,7 +143,7 @@ export default function App() {
     return (
         <div className="app-container">
             <KaTeXLoader />
-            <Header streak={streak} vocab={vocab} onScrollToTop={scrollToTop} />
+            <Header streak={streak} vocab={vocab} onScrollToTop={scrollToTop} onGoHome={goHomeAndReset} />
 
             <main ref={mainRef} className="content" style={{ flex: 1 }}>
                 {tab === "home" && <HomePage vocab={vocab} setVocab={setVocab} streak={streak} />}
@@ -111,7 +151,7 @@ export default function App() {
                 {tab === "settings" && <SettingsPage streak={streak} vocab={vocab} tags={tags} onImport={handleImport} />}
             </main>
 
-            <BottomNav active={tab} onChange={setTab} />
+            <BottomNav active={tab} onChange={handleTabChange} />
         </div>
     );
 }

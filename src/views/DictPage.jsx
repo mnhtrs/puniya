@@ -72,8 +72,14 @@ export default function DictPage({ vocab, setVocab, onBack }) {
         setQuery(val);
         if (!val.trim()) {
             setSugs([]);
-            setShowSug(false);
-            syncUrl("");
+            // Khi xoá trắng, hiện lại lịch sử nếu có
+            if (history.length > 0) {
+                setSugs(history);
+                setShowSug(true);
+            } else {
+                setShowSug(false);
+            }
+            // Removing syncUrl("") from here to avoid input focus/interruption issues
             return;
         }
         clearTimeout(debRef.current);
@@ -160,14 +166,32 @@ export default function DictPage({ vocab, setVocab, onBack }) {
                         onChange={(e) => handleChange(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && query.trim()) doLookup(query.trim()); if (e.key === "Escape") setShowSug(false); }}
                         onBlur={() => setTimeout(() => setShowSug(false), 180)}
-                        onFocus={() => sugs.length > 0 && setShowSug(true)}
+                        onFocus={() => {
+                            if (!query.trim() && history.length > 0) {
+                                setSugs(history);
+                                setShowSug(true);
+                            } else if (sugs.length > 0) {
+                                setShowSug(true);
+                            }
+                        }}
                         autoComplete="off"
                     />
                     {showSug && (
                         <div className="sug-wrap">
+                            {!query.trim() && history.length > 0 && (
+                                <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: T.pink, display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border}` }}>
+                                    <span>🕒 LỊCH SỬ GẦN ĐÂY</span>
+                                    <span onMouseDown={(e) => { e.preventDefault(); clearHistory(); }} style={{ cursor: "pointer", opacity: 0.8 }}>Xoá hết</span>
+                                </div>
+                            )}
                             {sugs.map((s, i) => (
                                 <div key={i} className="sug-item" onMouseDown={(e) => { e.preventDefault(); doLookup(s); }}>
-                                    <span style={{ marginRight: 10, color: T.textL }}>🔍</span>{s}<span style={{ float: "right", fontSize: 11, color: T.textL }}>↵</span>
+                                    <span style={{ marginRight: 10, color: T.textL }}>{query.trim() ? "🔍" : "🕒"}</span>
+                                    {s}
+                                    {!query.trim() && (
+                                        <span onMouseDown={(e) => { e.preventDefault(); removeHistoryItem(e, s); }} style={{ float: "right", padding: "0 5px", color: T.pink, opacity: 0.5 }}>×</span>
+                                    )}
+                                    {query.trim() && <span style={{ float: "right", fontSize: 11, color: T.textL }}>↵</span>}
                                 </div>
                             ))}
                         </div>
@@ -178,38 +202,7 @@ export default function DictPage({ vocab, setVocab, onBack }) {
                 </button>
             </div>
 
-            {/* Search History */}
-            {!loading && !result && history.length > 0 && (
-                <div style={{ marginBottom: 20, animation: "fadeIn 0.3s" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5 }}>
-                            🕒 Lịch sử gần đây
-                        </div>
-                        <button onClick={clearHistory} style={{ fontSize: 11, background: "none", border: "none", color: T.pink, cursor: "pointer", fontWeight: 700 }}>Xóa hết</button>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {history.map((h, i) => (
-                            <div key={i} className="bdg"
-                                style={{
-                                    background: "#fff", color: T.text, padding: "6px 14px", borderRadius: 12,
-                                    fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.05)", border: `1px solid ${T.pinkL}`
-                                }}
-                                onClick={() => doLookup(h)}
-                            >
-                                <span style={{ opacity: 0.6 }}>🔍</span> {h}
-                                <span onClick={(e) => removeHistoryItem(e, h)}
-                                    style={{
-                                        opacity: 0.4, fontSize: 18, marginLeft: 4,
-                                        width: 20, height: 20, display: "flex",
-                                        alignItems: "center", justifyContent: "center",
-                                        borderRadius: "50%", background: "rgba(0,0,0,0.05)"
-                                    }}>×</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+
 
             {/* Loading */}
             {loading && (
@@ -383,7 +376,7 @@ export default function DictPage({ vocab, setVocab, onBack }) {
                     {/* Source info */}
                     {result.hasWikiData && (
                         <div style={{ fontSize: 10, color: T.textL, textAlign: "center", marginTop: 15, opacity: 0.6 }}>
-                            Nguồn: Wiktionary (en.wiktionary.org) · Google Translate
+                            Nguồn: Wiktionary (en+sv) · Folkets Lexikon · Google Translate
                         </div>
                     )}
 

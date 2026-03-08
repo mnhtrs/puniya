@@ -48,21 +48,32 @@ export default function MatematikPage({ onBack }) {
                         <div style={{ marginTop: 14, borderTop: `1.5px solid ${T.border}`, paddingTop: 14 }}>
                             <div style={{ fontSize: 14, lineHeight: 1.7, color: T.text, marginBottom: 14 }}>{m.content}</div>
 
-                            {m.formulas && (
+                            {m.formulas && m.formulas.length > 0 && (
                                 <div style={{ marginBottom: 14 }}>
                                     <div style={{ fontSize: 12, fontWeight: 800, color: T.pink, marginBottom: 7, textTransform: "uppercase" }}>Công thức & Khái niệm</div>
-                                    {m.formulas.map((f, i) => (
-                                        <div key={i}>
-                                            {typeof f === "string" ? (
-                                                <LatexBlock src={f} />
-                                            ) : (
-                                                <div style={{ padding: "10px 14px", background: "#fdf4ff", borderRadius: 10, border: "1px solid #fae8ff", marginBottom: 8 }}>
-                                                    <LatexBlock src={f.problem} />
-                                                    <div style={{ fontSize: 13, color: "#9333ea", fontWeight: 700, marginTop: 4 }}>💡 Giải: {f.solution}</div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                        {m.formulas.map((f, i) => (
+                                            <div key={i}><LatexBlock src={f} /></div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {m.examples && m.examples.length > 0 && (
+                                <div style={{ marginBottom: 14 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#3b82f6", marginBottom: 7, textTransform: "uppercase" }}>Ví dụ mẫu</div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                        {m.examples.map((ex, i) => (
+                                            <div key={i} style={{ padding: "10px 14px", background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe" }}>
+                                                <div style={{ marginBottom: 6 }}>
+                                                    <LatexBlock src={ex.problem} />
                                                 </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                <div style={{ fontSize: 13, color: "#9333ea", fontWeight: 700, background: "rgba(255,255,255,0.6)", padding: "4px 8px", borderRadius: 6 }}>
+                                                    💡 <LatexBlock src={ex.solution} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 

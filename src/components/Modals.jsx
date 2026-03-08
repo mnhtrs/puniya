@@ -4,7 +4,7 @@ import { dbAdd, dbPut, dbDelete } from "../services/db";
 import { T } from "../constants/theme";
 import { SvFlag } from "./SvFlag";
 import { VnFlag } from "./VnFlag";
-import { UkFlag } from "./UkFlag";
+// import { UkFlag } from "./UkFlag";
 import { speakSv } from "../services/api";
 
 function sanitize(str) {
@@ -103,8 +103,7 @@ export function TagManagerModal({ tags, setTags, onClose }) {
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="m-handle" />
-                <div className="sec-title">🏷️ Quản lý nhãn</div>
+                <div className="sec-title" style={{ marginBottom: 20 }}>🏷️ Quản lý nhãn</div>
 
                 <div style={{ marginBottom: 20 }}>
                     <button className="btn btn-p" style={{ width: "100%" }} onClick={() => setEditing({ name: "", color: T.pink })}>+ Tạo nhãn mới</button>
@@ -135,6 +134,15 @@ export function TagManagerModal({ tags, setTags, onClose }) {
                                 {["#FF6B9D", "#FF8B6A", "#FDE68A", "#6EE7B7", "#60A5FA", "#C084FC", "#9B6B8A", "#2D2D2D"].map(c => (
                                     <div key={c} className={`color-dot ${editing.color === c ? "active" : ""}`} style={{ background: c }} onClick={() => setEditing({ ...editing, color: c })} />
                                 ))}
+                                <div style={{ position: "relative", width: 28, height: 28 }}>
+                                    <div className="color-dot" style={{ background: "linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>🎨</div>
+                                    <input
+                                        type="color"
+                                        value={editing.color || "#FF6B9D"}
+                                        onChange={e => setEditing({ ...editing, color: e.target.value })}
+                                        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                                    />
+                                </div>
                             </div>
                             <div style={{ display: "flex", gap: 10 }}>
                                 <button className="btn btn-s" style={{ flex: 1 }} onClick={() => setEditing(null)}>Hủy</button>
@@ -208,9 +216,30 @@ export function WordDetailModal({ word, tags, onClose, onDelete, onEdit, onStar 
                     </div>
                 )}
 
-                <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-                    <button className="btn btn-s" style={{ flex: 1, color: "#ef4444" }} onClick={() => onDelete(word.id)}>🗑️ Xóa</button>
-                    <button className="btn btn-p" style={{ flex: 1 }} onClick={onClose}>Xong</button>
+                {ai?.examples?.length > 0 && (
+                    <div style={{ marginBottom: 15 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: T.textL, marginBottom: 7, textTransform: "uppercase" }}>💬 Ví dụ sử dụng</div>
+                        {ai.examples.map((ex, ei) => (
+                            <div key={ei} style={{ marginBottom: 8, background: "#f8fafc", padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                                <div style={{ fontWeight: 700, color: T.purple, fontSize: 14 }}><SvFlag size={14} /> {ex.sv}</div>
+                                <div style={{ fontSize: 13, color: T.text, marginTop: 4 }}><VnFlag size={14} /> {ex.vi}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <button
+                    className="btn btn-s"
+                    style={{ width: "100%", marginBottom: 10, fontSize: 13, padding: "8px" }}
+                    onClick={() => {
+                        window.location.search = `?q=${encodeURIComponent(word.sv)}`;
+                    }}>
+                    📖 Tra cứu đầy đủ trên Từ Điển
+                </button>
+
+                <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+                    <button className="btn btn-s" style={{ flex: 1, color: "#ef4444", fontWeight: 700, borderRadius: 12, height: 46 }} onClick={() => onDelete(word.id)}>🗑️ Xóa từ</button>
+                    <button className="btn btn-p" style={{ flex: 1.5, borderRadius: 12, height: 46 }} onClick={onClose}>Xong</button>
                 </div>
             </div>
         </div>
@@ -271,13 +300,12 @@ export function AddWordModal({ tags, onClose, onSave }) {
 
     return (
         <div className="ov" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "92vh", overflowY: "auto" }}>
-                <div className="m-handle" />
-                <div className="sec-title">✨ Thêm từ mới</div>
-
-                <div style={{ position: "relative", marginBottom: 12 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🇸🇪 Từ tiếng Thụy Điển</label>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="sec-title" style={{ marginBottom: 22 }}>✨ Thêm từ mới</div>
+                <div style={{ position: "relative", marginBottom: 18 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}><SvFlag size={14} /> Từ tiếng Thụy Điển</label>
                     <input className="inp" placeholder="Gõ từ..." value={sv} onChange={(e) => handleSvChange(e.target.value)} onFocus={() => sugs.length > 0 && setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)} />
+                    {loading && <div style={{ fontSize: 11, color: T.pink, marginTop: 6, fontWeight: 700, fontStyle: "italic", animation: "fadeIn 0.3s" }}>⏳ Đang tra từ điển và phân tích ngữ pháp...</div>}
                     {showSug && (
                         <div className="sug-wrap">
                             {sugs.map((s, i) => <div key={i} className="sug-item" onMouseDown={() => pickWord(s)}>🔍 {s}</div>)}
@@ -285,8 +313,8 @@ export function AddWordModal({ tags, onClose, onSave }) {
                     )}
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🇻🇳 Nghĩa tiếng Việt</label>
+                <div style={{ marginBottom: 18 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}><VnFlag size={14} /> Nghĩa tiếng Việt</label>
                     <input className="inp" value={viVal} onChange={(e) => setViVal(sanitize(e.target.value))} />
                 </div>
 
@@ -300,41 +328,42 @@ export function AddWordModal({ tags, onClose, onSave }) {
                     />
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>
-                    <button className="btn btn-s" style={{ flex: 1 }} onClick={onClose}>Hủy</button>
-                    <button className="btn btn-p" style={{ flex: 2 }} onClick={doSave} disabled={!sv.trim() || !viVal.trim() || loading}>Lưu từ</button>
+                <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
+                    <button className="btn btn-s" style={{ flex: 1, height: 48, borderRadius: 12 }} onClick={onClose}>Hủy</button>
+                    <button className="btn btn-p" style={{ flex: 2, height: 48, borderRadius: 12 }} onClick={doSave} disabled={!sv.trim() || !viVal.trim() || loading}>Lưu từ vào sổ tay</button>
                 </div>
             </div>
         </div>
     );
 }
 
-export function EditWordModal({ tags, word, isMulti, onClose, onSave }) {
+export function EditWordModal({ tags, word, isMulti, multiMode, onClose, onSave }) {
     const [sv, setSv] = useState(word?.sv || "");
     const [vi, setVi] = useState(word?.vi || "");
     const [selectedTags, setSelectedTags] = useState(isMulti ? [] : (word?.categories || (word?.category ? [word?.category] : [])));
 
+    const title = isMulti ? (multiMode === "add" ? "Thêm nhãn cho các từ đã chọn" : "Gỡ nhãn khỏi các từ đã chọn") : "Sửa từ vựng";
+
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="m-handle" />
-                <div className="sec-title">{isMulti ? "Gán nhãn cho các từ đã chọn" : "Sửa từ vựng"}</div>
+                <div className="sec-title">{title}</div>
 
                 {!isMulti && (
                     <>
-                        <div style={{ marginBottom: 12 }}>
-                            <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🇸🇪 Tiếng Thụy Điển</label>
+                        <div style={{ marginBottom: 18 }}>
+                            <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}><SvFlag size={14} /> Tiếng Thụy Điển</label>
                             <input className="inp" value={sv} onChange={e => setSv(sanitize(e.target.value))} />
                         </div>
-                        <div style={{ marginBottom: 12 }}>
-                            <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🇻🇳 Tiếng Việt</label>
+                        <div style={{ marginBottom: 18 }}>
+                            <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}><VnFlag size={14} /> Tiếng Việt</label>
                             <input className="inp" value={vi} onChange={e => setVi(sanitize(e.target.value))} />
                         </div>
                     </>
                 )}
 
                 <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🏷️ Nhãn</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🏷️ {multiMode === "remove" ? "Chọn nhãn cần gỡ" : "Chọn nhãn"}</label>
                     <TagSelector
                         allTags={tags}
                         selectedNames={selectedTags}
@@ -343,15 +372,17 @@ export function EditWordModal({ tags, word, isMulti, onClose, onSave }) {
                     />
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     <button className="btn btn-s" style={{ flex: 1 }} onClick={onClose}>Hủy</button>
-                    <button className="btn btn-p" style={{ flex: 2 }} onClick={() => {
-                        if (isMulti) {
-                            onSave(tags.filter(t => selectedTags.includes(t.name)));
-                        } else {
-                            onSave({ ...word, sv, vi, categories: selectedTags, category: selectedTags[0] || "Chung" });
-                        }
-                    }}>Lưu thay đổi</button>
+                    {isMulti ? (
+                        multiMode === "add" ? (
+                            <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave(selectedTags, "add")} disabled={selectedTags.length === 0}>Xác nhận Thêm</button>
+                        ) : (
+                            <button className="btn" style={{ flex: 2, background: "#fee2e2", color: "#ef4444", fontWeight: 700 }} onClick={() => onSave(selectedTags, "remove")} disabled={selectedTags.length === 0}>Xác nhận Gỡ</button>
+                        )
+                    ) : (
+                        <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave({ ...word, sv, vi, categories: selectedTags, category: selectedTags[0] || "Chung" })}>Lưu thay đổi</button>
+                    )}
                 </div>
             </div>
         </div>

@@ -9,11 +9,18 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
     const [notifInterval, setNotifInterval] = useState(localStorage.getItem("puniya_notif_min") || "30");
 
     useEffect(() => {
+        const wasEnabled = localStorage.getItem("puniya_notif") === "true";
         localStorage.setItem("puniya_notif", notifEnabled);
         localStorage.setItem("puniya_notif_min", notifInterval);
-        if (notifEnabled && "Notification" in window && Notification.permission !== "granted") {
-            Notification.requestPermission();
+
+        if (notifEnabled && "Notification" in window) {
+            Notification.requestPermission().then(perm => {
+                if (perm === "granted" && !wasEnabled) {
+                    new Notification("Puniya", { body: "Đã bật thông báo ôn tập thành công! 🎉", icon: "/hachiware.png" });
+                }
+            });
         }
+        window.dispatchEvent(new Event("notifSettingsChanged"));
     }, [notifEnabled, notifInterval]);
 
     function exportData() {
@@ -53,9 +60,11 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
                     </label>
                 </div>
                 {notifEnabled && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: 13, color: T.textL }}>Lặp lại mỗi (phút):</div>
-                        <input type="number" className="inp btn-sm" style={{ width: 80, padding: "5px 10px" }} value={notifInterval} onChange={(e) => setNotifInterval(e.target.value)} />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ fontSize: 13, color: T.textL }}>Lặp lại mỗi (phút):</div>
+                            <input type="number" step="0.1" min="0.1" className="inp btn-sm" style={{ width: 80, padding: "5px 10px" }} value={notifInterval} onChange={(e) => setNotifInterval(e.target.value)} />
+                        </div>
                     </div>
                 )}
             </div>
@@ -95,19 +104,20 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
             <div className="card card-g">
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.pink, textTransform: "uppercase" }}>Về dự án Puniya</div>
                 <div style={{ fontSize: 13, color: T.text, lineHeight: "1.75", marginBottom: 15 }}>
-                    <b>Puniya v2.2</b> - Ứng dụng học tiếng Thụy Điển & Khoa học dành riêng cho người Việt.
+                    <b>Puniya</b> - Trang web học tiếng Thụy Điển & Khoa học dành riêng cho người Việt (Cụ thể là dành riêng cho em bphuong thôi).
                     Tích hợp trí tuệ nhân tạo <b>GPT-4o</b> để dịch thuật chính xác và hệ thống lặp lại ngắt quãng <b>SRS</b> để ghi nhớ từ vựng hiệu quả nhất.
+                    Ngoài ra đây còn là món quà nho nhỏ tặng cho em Nước Sôi Ấm Áp, mong ẻm có thể học tốt hơn 👉👈
                 </div>
 
                 <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 15 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, marginBottom: 12, textTransform: "uppercase" }}>Tác giả & Liên hệ</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: T.textL, marginBottom: 12, textTransform: "uppercase" }}>Tác giả & Liên hệ</div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 18 }}>
-                        <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${T.pinkL}` }}>
-                            <img src="https://img.favpng.com/22/6/14/chiikawa-cute-cat-doodle-i4gYkKuD_t.jpg" alt="avatar" style={{ width: "90%", height: "90%", borderRadius: "50%" }} />
+                        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${T.pinkL}` }}>
+                            <img src="/tho_hong_mat_ngu.png" alt="avatar" style={{ width: "65%", height: "100%", borderRadius: "36%" }} />
                         </div>
                         <div>
-                            <div style={{ fontSize: 15, fontWeight: 900, color: T.text }}>Made By LNMT</div>
-                            <div style={{ fontSize: 12, color: T.textL }}>A small present for Dao Bich Phuong</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: T.text }}>Made By LNMT</div>
+                            <div style={{ fontSize: 15, color: T.textL }}>"This website is a small gift for Dao Bich Phuong"</div>
                         </div>
                     </div>
 

@@ -37,14 +37,25 @@ export async function svAutocomplete(query) {
     } catch { return []; }
 }
 
-// Google Translate text translation (sv → vi)
 async function googleTranslate(text, sl = "sv", tl = "vi") {
+    if (!text) return "";
     try {
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
         const res = await fetch(url);
         const json = await res.json();
-        return json?.[0]?.[0]?.[0] || text;
+        return json?.[0]?.map(x => x[0]).join("") || text;
     } catch { return text; }
+}
+
+/**
+ * Dịch hàng loạt để tăng tốc độ. Nối các câu bằng dấu phân cách đặc biệt.
+ */
+async function googleTranslateBatch(texts, sl = "sv", tl = "vi") {
+    if (!texts.length) return [];
+    const DELIM = " ||| ";
+    const combined = texts.join(DELIM);
+    const result = await googleTranslate(combined, sl, tl);
+    return result.split(DELIM).map((val, i) => val.trim() || texts[i]);
 }
 
 // Fetch Swedish IPA phonetics from English Wiktionary (most complete source)
@@ -136,22 +147,22 @@ function parseVerbForms(template, word) {
     const regMatch = template.match(/sv-verb-reg\|([^|}]+)/);
     if (regMatch) {
         const stem = regMatch[1];
-        return { 'Nguyên mẫu': stem + 'a', 'Hiện tại': stem + 'ar', 'Quá khứ': stem + 'ade', 'Supine': stem + 'at', 'Mệnh lệnh': stem + 'a' };
+        return { 'Nguyên mẫu': stem + 'a', 'Hiện tại': stem + 'ar', 'Quá khứ': stem + 'ade', 'Phân từ 2 (Supine)': stem + 'at', 'Mệnh lệnh': stem + 'a', 'Quá khứ phân từ': stem + 'ad' };
     }
     // sv-verb-irreg|gå|gick|gått
     const irregMatch = template.match(/sv-verb-irreg\|([^|}]+)\|([^|}]+)\|([^|}]+)/);
     if (irregMatch) {
-        return { 'Nguyên mẫu': irregMatch[1], 'Quá khứ': irregMatch[2], 'Supine': irregMatch[3] };
+        return { 'Nguyên mẫu': irregMatch[1], 'Quá khứ': irregMatch[2], 'Phân từ 2 (Supine)': irregMatch[3] };
     }
     // sv-conj-wk|stopp  (weak verb)
     const conjWkMatch = template.match(/sv-conj-wk\|([^|}]+)/);
     if (conjWkMatch) {
         const stem = conjWkMatch[1];
-        return { 'Nguyên mẫu': stem + 'a', 'Hiện tại': stem + 'ar', 'Quá khứ': stem + 'ade', 'Supine': stem + 'at' };
+        return { 'Nguyên mẫu': stem + 'a', 'Hiện tại': stem + 'ar', 'Quá khứ': stem + 'ade', 'Phân từ 2 (Supine)': stem + 'at', 'Quá khứ phân từ': stem + 'ad' };
     }
     // sv-conj-st (strong verb) — complex pattern, just note it
     if (template.includes('sv-conj-st')) {
-        return { 'Ghi chú': 'Động từ mạnh (bất quy tắc)' };
+        return { 'Ghi chú': 'Động từ mạnh (bất quy tắc, thường biến đổi nguyên âm)' };
     }
     return null;
 }
@@ -159,9 +170,8 @@ function parseVerbForms(template, word) {
 function parseNounForms(template) {
     const genderMatch = template.match(/g=([cn])/);
     const gender = genderMatch ? (genderMatch[1] === 'c' ? 'en (thông giống)' : 'ett (trung giống)') : null;
-    // sv-noun-reg-er, sv-noun-reg-or, sv-noun-reg-ar
-    const regMatch = template.match(/sv-noun-(reg-[a-z]+|unc|irreg)/);
-    const declType = regMatch ? regMatch[1] : null;
+    const regMatch = template.match(/sv-noun-([^|}]+)/);
+    const declType = regMatch ? 'Nhóm biến cách: ' + regMatch[1] : null;
     return { gender, declType };
 }
 
@@ -227,15 +237,17 @@ function parsePOSBlocks(section) {
 
         // Examples: {{ux|sv|text|translation}} or {{uxi|sv|...}}
         const examples = [];
-        const uxIter = block.matchAll(/\{\{ux[i]?\|sv\|([^|]+)\|([^}]+)\}\}/g);
+        const uxIter = block.matchAll(/\{\{ux[i]?\|\s*sv\s*\|((?:\{\{[^}]*\}\}|[^{|}])+)\|((?:\{\{[^}]*\}\}|[^{}])+)\}\}/gi);
         for (const mx of uxIter) {
             const svText = cleanWiki(mx[1].trim());
-            const enText = cleanWiki(mx[2].replace(/\|[^|]*$/, '').trim());
+            let enText = mx[2].split('|')[0].trim();
+            enText = cleanWiki(enText);
             examples.push({ sv: svText, en: enText });
         }
         // Also #: lines
         for (const line of lines) {
             if (/^#:\s/.test(line)) {
+                if (line.includes('{{ux|') || line.includes('{{uxi|')) continue;
                 const txt = cleanWiki(line.replace(/^#:\s*/, ''));
                 if (txt && !examples.find(e => e.sv === txt)) examples.push({ sv: txt, en: "" });
             }
@@ -274,107 +286,177 @@ function parsePOSBlocks(section) {
     return blocks;
 }
 
-export async function lookupWordDict(word) {
-    if (!word) return null;
+async function fetchFolketsData(word) {
     try {
-        // Step 1: Fetch wikitext from English Wiktionary
-        const url = `https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(word.toLowerCase())}&prop=wikitext&format=json&origin=*`;
+        const url = `https://folkets-lexikon.csc.kth.se/folkets/service?word=${encodeURIComponent(word)}`;
+        const res = await fetch(url);
+        const html = await res.text();
+
+        let ipa = null;
+        let synonyms = [];
+        let antonyms = [];
+
+        const ipaMatch = html.match(/Uttal:\s*\[([^\]]+)\]/);
+        if (ipaMatch) ipa = `/${ipaMatch[1].replace(/:/g, 'ː')}/`;
+
+        const synMatch = html.match(/Synonymer:\s*([^<]+)/);
+        if (synMatch) synonyms = synMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+
+        const relMatch = html.match(/Relaterade ord:\s*([^<]+)/);
+        if (relMatch) {
+            const parts = relMatch[1].split(',');
+            for (let part of parts) {
+                if (part.includes('(antonym)')) {
+                    const clean = part.replace(/\(.*?\)/g, '').trim();
+                    if (clean) antonyms.push(clean);
+                }
+            }
+        }
+        return { ipa, synonyms, antonyms };
+    } catch { return { ipa: null, synonyms: [], antonyms: [] }; }
+}
+
+async function fetchSvWiktionaryData(word) {
+    try {
+        const url = `https://sv.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(word)}&prop=wikitext&format=json&origin=*`;
         const res = await fetch(url);
         const data = await res.json();
         const wikitext = data?.parse?.wikitext?.["*"] || "";
 
-        // Step 2: Extract Swedish section
+        const synonyms = [];
+        const antonyms = [];
+
+        const synMatch = wikitext.match(/\{\{synonymer\|([^}]+)\}\}/);
+        if (synMatch) {
+            const raw = synMatch[1];
+            const words = Array.from(raw.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g));
+            words.forEach(w => synonyms.push(w[1]));
+        }
+
+        const antMatch = wikitext.match(/\{\{antonymer\|([^}]+)\}\}/);
+        if (antMatch) {
+            const raw = antMatch[1];
+            const words = Array.from(raw.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g));
+            words.forEach(w => antonyms.push(w[1]));
+        }
+        return { synonyms, antonyms };
+    } catch { return { synonyms: [], antonyms: [] }; }
+}
+
+export async function lookupWordDict(word) {
+    if (!word) return null;
+    try {
+        const lowerWord = word.toLowerCase();
+        const url = `https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(lowerWord)}&prop=wikitext&format=json&origin=*`;
+
+        // Execute fetches in parallel to keep it fast
+        const [enWikiData, viMeaning, folkets, svWiki] = await Promise.all([
+            fetch(url).then(r => r.json()).catch(() => ({})),
+            googleTranslate(word),
+            fetchFolketsData(lowerWord),
+            fetchSvWiktionaryData(lowerWord)
+        ]);
+
+        const wikitext = enWikiData?.parse?.wikitext?.["*"] || "";
         const svSection = extractSvSection(wikitext);
 
-        // Step 3: Get Vietnamese translation (always from Google - free, no AI)
-        const viMeaning = await googleTranslate(word);
-
-        if (!svSection) {
-            // No Swedish section — return basic translation only
-            return {
-                word,
-                viMeaning,
-                ipa: null,
-                blocks: [],
-                hasWikiData: false,
-            };
-        }
-
-        // Step 4: Parse all structured data
-        let ipa = parseWikiIPA(svSection);
-        // Fallback: use the dedicated IPA fetcher if inline parsing failed
-        if (!ipa) {
-            ipa = await fetchSwedishIPA(word).catch(() => null);
-        }
-        const blocks = parsePOSBlocks(svSection);
-
-        // Step 5: Translate English definitions to Vietnamese (batch, free Google Translate)
-        for (const block of blocks) {
-            const translated = [];
-            for (const def of block.defs) {
-                try {
-                    const vi = await googleTranslate(def, "en", "vi");
-                    translated.push({ en: def, vi: vi || def });
-                } catch { translated.push({ en: def, vi: def }); }
-            }
-            block.defsVi = translated;
-
-            // Translate examples: ALWAYS sv→vi for best quality
-            const trEx = [];
-            for (const ex of block.examples) {
-                let viTrans = "";
-                try { viTrans = await googleTranslate(ex.sv, "sv", "vi"); } catch { }
-                trEx.push({ sv: ex.sv, en: ex.en || "", vi: viTrans || ex.sv });
-            }
-            block.examplesVi = trEx;
-        }
-
-        // Step 6: Get CEFR levels and IPA from rendered HTML (SUPER ROBUST)
+        let ipa = null;
+        let blocks = [];
         let cefr = null;
-        try {
-            const extraUrl = `https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(word.toLowerCase())}&prop=text|categories&format=json&origin=*`;
-            const extraRes = await fetch(extraUrl);
-            const extraData = await extraRes.json();
 
-            const cats = extraData?.parse?.categories || [];
-            for (const c of cats) {
-                const title = c["*"] || "";
-                const match = title.match(/Swedish_([A-C][1-2])_words/i);
-                if (match) { cefr = match[1].toUpperCase(); break; }
-            }
+        if (svSection) {
+            ipa = parseWikiIPA(svSection);
+            if (!ipa) ipa = await fetchSwedishIPA(word).catch(() => null);
+            blocks = parsePOSBlocks(svSection);
 
-            if (!ipa) {
-                const html = extraData?.parse?.text?.["*"] || "";
-                const svStart = html.indexOf('id="Swedish"');
-                let searchSpace = html;
-                if (svStart > -1) {
-                    // Look for the next language header or end of page
-                    const nextLang = html.indexOf('class="mw-heading', svStart + 20);
-                    searchSpace = nextLang > -1 ? html.slice(svStart, nextLang) : html.slice(svStart);
+            // TỐI ƯU: Dịch định nghĩa và ví dụ hàng loạt theo từng Block
+            for (const block of blocks) {
+                // 1. Dịch Definitions
+                if (block.defs.length > 0) {
+                    const translatedDefs = await googleTranslateBatch(block.defs, "en", "vi");
+                    block.defsVi = block.defs.map((en, idx) => ({ en, vi: translatedDefs[idx] }));
                 }
 
-                // Match all IPA spans and pick the first one that looks like Swedish
-                const ipaMatches = Array.from(searchSpace.matchAll(/<span class="IPA"[^>]*>([^<]+)<\/span>/g));
-                for (const m of ipaMatches) {
-                    let val = m[1].replace(/<[^>]+>/g, '').trim();
-                    if (val && val !== "—") {
-                        if (!val.startsWith('/') && !val.startsWith('[')) val = `/${val}/`;
-                        ipa = val;
-                        break;
+                // 2. Dịch Examples
+                if (block.examples.length > 0) {
+                    const svTexts = block.examples.map(ex => ex.sv);
+                    const translatedEx = await googleTranslateBatch(svTexts, "sv", "vi");
+                    block.examplesVi = block.examples.map((ex, idx) => ({
+                        sv: ex.sv,
+                        en: ex.en || "",
+                        vi: translatedEx[idx]
+                    }));
+                }
+            }
+
+            // CEFR & IPA Fallback
+            try {
+                const extraUrl = `https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(lowerWord)}&prop=text|categories&format=json&origin=*`;
+                const extraRes = await fetch(extraUrl);
+                const extraData = await extraRes.json();
+
+                const cats = extraData?.parse?.categories || [];
+                for (const c of cats) {
+                    const title = c["*"] || "";
+                    const match = title.match(/Swedish_([A-C][1-2])_words/i);
+                    if (match) { cefr = match[1].toUpperCase(); break; }
+                }
+
+                // Trình độ cơ bản nếu thuộc danh mục phổ biến
+                if (!cefr) {
+                    const catString = cats.map(c => c["*"]).join(" ");
+                    if (catString.includes("common_words")) cefr = "A1";
+                    else if (catString.includes("basic_words")) cefr = "A2";
+                }
+
+                if (!ipa) {
+                    const html = extraData?.parse?.text?.["*"] || "";
+                    const ipaMatches = Array.from(html.matchAll(/<span class="IPA"[^>]*>([^<]+)<\/span>/g));
+                    for (const m of ipaMatches) {
+                        let val = m[1].replace(/<[^>]+>/g, '').trim();
+                        if (val && val !== "—" && (val.includes('/') || val.includes('['))) {
+                            ipa = val;
+                            break;
+                        }
                     }
                 }
-            }
-        } catch { }
-
-        // Step 7: Final Fallback for tricky words (like 'stygg', 'hälsa')
-        if (!ipa || ipa === "—") {
-            try {
-                // Fetch from a dedicated Swedish pronunciation source (Lexin/etc)
-                const fallbackRes = await fetch(`https://lexin.nada.kth.se/lexin/service?disp=1&trad=swe-swe&word=${encodeURIComponent(word.toLowerCase())}`);
-                const fallbackHtml = await fallbackRes.text();
-                const m = fallbackHtml.match(/phonetic="([^"]+)"/);
-                if (m) ipa = `/${m[1].trim()}/`;
             } catch { }
+
+        } else if (folkets.synonyms.length || svWiki.synonyms.length || folkets.ipa) {
+            // Create a pseudo block if English Wiktionary missed it but we have synonym/IPA data
+            blocks = [{
+                posVi: "Từ vựng", posEn: "Word",
+                defs: [], defsVi: [{ en: "", vi: viMeaning }], examples: [], examplesVi: [],
+                verbForms: null, nounInfo: null, adjForms: null,
+                synonyms: [], antonyms: [], related: [], derived: []
+            }];
+        }
+
+        // Final IPA Fallback (Folkets Lexikon takes precedence if previous failed)
+        if (!ipa || ipa === "—") {
+            if (folkets.ipa) {
+                ipa = folkets.ipa;
+            } else {
+                try {
+                    const fallbackRes = await fetch(`https://lexin.nada.kth.se/lexin/service?disp=1&trad=swe-swe&word=${encodeURIComponent(lowerWord)}`);
+                    const fallbackHtml = await fallbackRes.text();
+                    const m = fallbackHtml.match(/phonetic="([^"]+)"/);
+                    if (m) ipa = `/${m[1].trim()}/`;
+                } catch { }
+            }
+        }
+
+        // Merge synonyms & antonyms from Folkets & Swedish Wiktionary
+        if (blocks.length > 0) {
+            const allSyns = new Set(blocks[0].synonyms || []);
+            folkets.synonyms.forEach(s => allSyns.add(s));
+            svWiki.synonyms.forEach(s => allSyns.add(s));
+            blocks[0].synonyms = Array.from(allSyns).filter(s => s.toLowerCase() !== lowerWord);
+
+            const allAnts = new Set(blocks[0].antonyms || []);
+            folkets.antonyms.forEach(s => allAnts.add(s));
+            svWiki.antonyms.forEach(s => allAnts.add(s));
+            blocks[0].antonyms = Array.from(allAnts).filter(a => a.toLowerCase() !== lowerWord);
         }
 
         return {
@@ -392,84 +474,43 @@ export async function lookupWordDict(word) {
     }
 }
 
-// =====================================================
-// MAIN: Full dictionary lookup — Swedish → Vietnamese
-// =====================================================
 export async function lookupWordFull(word) {
     if (!word) return null;
-
-    // Tier 1: Instant hardcoded data for high-frequency words
-    const instant = {
-        "hej": { viMeaning: "Xin chào", ipa: "/hɛj/", pronunciation: "hây", partOfSpeech: "Thán từ", inflection: "không đổi", definitions: [{ vi: "Lời chào thân thiện." }], examples: [{ sv: "Hej, hur mår du?", vi: "Chào, bạn khoẻ không?" }] },
-        "hejdå": { viMeaning: "Tạm biệt", ipa: "/ˈhɛjˌdoː/", pronunciation: "hây-đoo", partOfSpeech: "Thán từ", inflection: "không đổi", definitions: [{ vi: "Lời chào khi chia tay." }], examples: [{ sv: "Hejdå, vi ses!", vi: "Tạm biệt, gặp lại nhé!" }] },
-        "tack": { viMeaning: "Cảm ơn", ipa: "/takː/", pronunciation: "tắc", partOfSpeech: "Từ cảm ơn", inflection: "không đổi", definitions: [{ vi: "Bày tỏ lòng biết ơn." }], examples: [{ sv: "Tack så mycket!", vi: "Cảm ơn rất nhiều!" }] },
-        "ja": { viMeaning: "Có / Vâng", ipa: "/jɑː/", pronunciation: "yaa", partOfSpeech: "Phó từ", inflection: "không đổi", definitions: [{ vi: "Đồng ý, xác nhận." }], examples: [{ sv: "Ja, det stämmer.", vi: "Vâng, đúng rồi." }] },
-        "nej": { viMeaning: "Không", ipa: "/nɛj/", pronunciation: "nây", partOfSpeech: "Phó từ", inflection: "không đổi", definitions: [{ vi: "Phủ định, từ chối." }], examples: [{ sv: "Nej, tack.", vi: "Không, cảm ơn." }] },
-        "katt": { viMeaning: "Con mèo", ipa: "/katː/", pronunciation: "cắt", partOfSpeech: "Danh từ (en)", inflection: "en katt, katten, katter, katterna", definitions: [{ vi: "Động vật nhỏ có lông, nuôi làm thú cưng." }], examples: [{ sv: "Min katt sover.", vi: "Con mèo tôi đang ngủ." }] },
-        "hund": { viMeaning: "Con chó", ipa: "/hɵnd/", pronunciation: "hụnd", partOfSpeech: "Danh từ (en)", inflection: "en hund, hunden, hundar, hundarna", definitions: [{ vi: "Động vật trung thành, nuôi để trông nhà." }], examples: [{ sv: "Hunden skäller.", vi: "Con chó đang sủa." }] },
-        "bok": { viMeaning: "Quyển sách", ipa: "/buːk/", pronunciation: "buuk", partOfSpeech: "Danh từ (en)", inflection: "en bok, boken, böcker, böckerna", definitions: [{ vi: "Tập hợp các trang giấy có in chữ." }], examples: [{ sv: "Jag läser en bok.", vi: "Tôi đang đọc một quyển sách." }] },
-        "stygg": { viMeaning: "Hư / Nghịch", ipa: "/stʏɡː/", pronunciation: "xtứg", partOfSpeech: "Tính từ", inflection: "stygg, styggt, styggare, styggas", definitions: [{ vi: "Không ngoan, khó bảo (thường nói về trẻ em)." }], examples: [{ sv: "Han är stygg.", vi: "Nó hư lắm." }] },
-        "stor": { viMeaning: "To lớn", ipa: "/stuːr/", pronunciation: "xtuu", partOfSpeech: "Tính từ", inflection: "stor, stort, stora", definitions: [{ vi: "Có kích thước lớn." }], examples: [{ sv: "Det är ett stort hus.", vi: "Đó là một ngôi nhà to lớn." }] },
-        "liten": { viMeaning: "Nhỏ bé", ipa: "/ˈliːtɛn/", pronunciation: "lii-ten", partOfSpeech: "Tính từ", inflection: "liten, litet, lilla/lille, små", definitions: [{ vi: "Có kích thước nhỏ." }], examples: [{ sv: "En liten katt.", vi: "Một con mèo nhỏ." }] },
-        "god": { viMeaning: "Ngon / Tốt", ipa: "/guːd/", pronunciation: "guud", partOfSpeech: "Tính từ", inflection: "god, gott, goda", definitions: [{ vi: "Có chất lượng tốt, thức ăn ngon." }], examples: [{ sv: "Det smakar gott!", vi: "Trông ngon lắm!" }] },
-    };
-
     const lower = word.toLowerCase().trim();
-    if (instant[lower]) {
-        return { aiData: { word, ...instant[lower] }, wkData: null };
-    }
 
-    // Tier 2: Parallel fetch — Google Translate + Wiktionary IPA simultaneously
-    const [viMeaning, ipa] = await Promise.all([
-        googleTranslate(word),
-        fetchSwedishIPA(word)
+    // 1. Instant Cache: Truy xuất ngay lập tức từ bộ nhớ đệm
+    if (_lookupCache[lower]) return _lookupCache[lower];
+
+    // 2. Parallel Deep Fetching (Wiktionary + Folkets + Google)
+    // Sử dụng sức mạnh của các từ điển chuyên dụng thay vì AI đa năng
+    const [wikiFull, viMeaning] = await Promise.all([
+        lookupWordDict(word).catch(() => null),
+        googleTranslate(word)
     ]);
 
-    // Tier 3: GPT-4o enrichment with known Vietnamese meaning
-    const prompt = `Từ tiếng Thuỵ Điển: "${word}"
-Nghĩa tiếng Việt đã xác định: "${viMeaning}"
-IPA phonetic: "${ipa || 'chưa rõ'}"
-
-Hãy trả về JSON đầy đủ kiểu từ điển Cambridge (hoàn toàn bằng tiếng Việt):
-{
-  "word": "${word}",
-  "viMeaning": "${viMeaning}",
-  "ipa": "${ipa || ''}",
-  "pronunciation": "phiên âm đọc theo kiểu Việt dễ hiểu, ví dụ: 'xtứg' cho stygg, 'tắc' cho tack",
-  "partOfSpeech": "loại từ (Danh từ/Động từ/Tính từ/Phó từ/Giới từ...)",
-  "gender": "giống (en hoặc ett nếu là danh từ, 'không có' nếu không phải danh từ)",
-  "level": "trình độ CEFR ước tính (A1/A2/B1/B2/C1/C2)",
-  "definitions": [{"vi": "định nghĩa tiếng Việt 1"}, {"vi": "định nghĩa tiếng Việt 2 nếu có"}],
-  "examples": [
-    {"sv": "ví dụ tiếng Thuỵ 1", "vi": "bản dịch tiếng Việt 1"},
-    {"sv": "ví dụ tiếng Thuỵ 2", "vi": "bản dịch tiếng Việt 2"},
-    {"sv": "ví dụ tiếng Thuỵ 3", "vi": "bản dịch tiếng Việt 3"}
-  ],
-  "inflection": "biến cách đầy đủ (en/ett, chia động từ theo các thì, so sánh tính từ...)",
-  "usage": "lưu ý cách dùng, ngữ cảnh, hoặc lỗi thường gặp nếu có"
-}`;
-
-    const raw = await callGPT(prompt, 1200);
-    if (raw) {
-        try {
-            const aiData = JSON.parse(raw);
-            if (!aiData.ipa && ipa) aiData.ipa = ipa;
-            return { aiData, wkData: null };
-        } catch (e) { console.error("Parse error:", e); }
-    }
-
-    return {
-        aiData: {
-            word,
-            viMeaning,
-            ipa: ipa || null,
-            pronunciation: null,
-            partOfSpeech: "Từ vựng",
-            definitions: [{ vi: `Nghĩa: ${viMeaning}` }],
-            inflection: "Chưa có dữ liệu"
-        },
-        wkData: null
+    // 3. Unify Data - Tất cả các từ đều được hưởng trọn bộ dữ liệu chuẩn
+    const aiData = {
+        word: word,
+        viMeaning: viMeaning,
+        ipa: wikiFull?.ipa || null,
+        pronunciation: wikiFull?.ipa ? `Đọc: ${wikiFull.ipa}` : null,
+        partOfSpeech: wikiFull?.blocks?.[0]?.posVi || "Từ vựng",
+        gender: wikiFull?.blocks?.[0]?.nounInfo?.gender || "n/a",
+        level: wikiFull?.cefr || "A1-C2", // Mọi từ đều có trình độ dựa trên Wiktionary
+        definitions: wikiFull?.blocks?.[0]?.defsVi || [{ vi: viMeaning }],
+        examples: wikiFull?.blocks?.[0]?.examplesVi || [],
+        inflection: wikiFull?.blocks?.[0]?.verbForms || wikiFull?.blocks?.[0]?.nounInfo?.declType || "Dữ liệu đang cập nhật",
+        synonyms: wikiFull?.blocks?.[0]?.synonyms || [],
+        antonyms: wikiFull?.blocks?.[0]?.antonyms || [],
+        related: wikiFull?.blocks?.[0]?.related || [],
+        usage: "Dữ liệu từ điển chuẩn Wiktionary & Folkets Lexikon"
     };
+
+    const finalResult = { aiData, wkData: wikiFull };
+
+    // Lưu vào cache để lần sau nhanh như chớp
+    _lookupCache[lower] = finalResult;
+    return finalResult;
 }
 
 // Prefetch all vocabulary audio URLs for instant playback
@@ -507,57 +548,66 @@ export async function aiGenerateQuiz(vocab) {
 // Khắc phục triệt để lỗi chậm & ORB Blocking.
 // =====================================================
 
-const _ttsCache = {}; // Lưu Blob URLs tại local
+const _ttsCache = {};
+const _lookupCache = {}; // Lưu trữ kết quả tra từ để truy xuất tức thì
 
 export async function speakSv(text, prefetchOnly = false) {
     if (!text) return;
     const key = text.toLowerCase().trim();
+    const enc = encodeURIComponent(text);
+    const googleUrl = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=sv&q=${enc}`;
 
-    // 1. Nếu đã tải xong, phát ngay lập tức (độ trễ 0ms)
+    // 1. Instant Cache Playback
     if (_ttsCache[key]) {
         if (!prefetchOnly) {
-            const audio = new Audio(_ttsCache[key]);
-            audio.play().catch(e => console.warn(e));
+            const a = new Audio(_ttsCache[key]);
+            a.play().catch(() => { });
         }
         return;
     }
 
-    const enc = encodeURIComponent(text);
-    const googleUrl = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=sv&q=${enc}`;
+    const playFallback = () => {
+        if (prefetchOnly) return;
+        // Last resort: Browser Speech Synthesis with Swedish Voice
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "sv-SE";
+            u.rate = 0.85;
+            const voices = window.speechSynthesis.getVoices();
+            const svVoice = voices.find(v => v.lang.includes("sv") || v.lang.includes("SE"));
+            if (svVoice) u.voice = svVoice;
+            window.speechSynthesis.speak(u);
+        }
+    };
 
     try {
-        // 2. Chạy đua (Racing) các Proxy tốc độ cao nhất (Cái nào phản hồi trước lấy luôn)
-        const fetchBlob = (url) => fetch(url).then(r => { if (!r.ok) throw new Error("Proxy failed"); return r.blob(); });
+        // 2. Racing Proxies for maximum reliability and speed
+        const fetchBlob = (url) => fetch(url).then(r => {
+            if (!r.ok) throw new Error();
+            return r.blob();
+        });
 
         const blob = await Promise.any([
             fetchBlob(`https://api.allorigins.win/raw?url=${encodeURIComponent(googleUrl)}`),
-            fetchBlob(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(googleUrl)}`)
+            fetchBlob(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(googleUrl)}`),
+            fetchBlob(`https://corsproxy.io/?${encodeURIComponent(googleUrl)}`),
+            // Short timeout as a last resort to jump to HTML5 Audio if proxies are slow
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000))
         ]);
 
-        // 3. Chuyển Blob thành Local URL
-        const localUrl = URL.createObjectURL(blob);
-        _ttsCache[key] = localUrl;
+        const url = URL.createObjectURL(blob);
+        _ttsCache[key] = url;
 
-        // 4. Phát âm thanh nếu không phải là chế độ tải ngầm (prefetch)
         if (!prefetchOnly) {
-            const audio = new Audio(localUrl);
-            await audio.play();
+            const a = new Audio(url);
+            await a.play();
         }
-
     } catch (err) {
-        console.warn("[TTS Sync Failed] Dùng hệ thống Text-to-Speech dự phòng của máy...", err);
-        if (!prefetchOnly && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            const voices = window.speechSynthesis.getVoices();
-            const svVoice = voices.find(v => v.lang.toLowerCase().includes("sv"));
-            if (svVoice) {
-                u.voice = svVoice;
-                u.lang = "sv-SE";
-                u.rate = 0.85;
-                window.speechSynthesis.speak(u);
-            }
+        // 3. Middle Fallback: Direct HTML5 Audio (No CORS needed for direct playback)
+        if (!prefetchOnly) {
+            const directAudio = new Audio(googleUrl);
+            directAudio.play().catch(playFallback);
         }
     }
 }
-
