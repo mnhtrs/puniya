@@ -1,6 +1,7 @@
 const NAV_ITEMS = [
     { id: "home", ico: "🏠", lbl: "Trang chủ" },
     { id: "vocab", ico: "📚", lbl: "Từ vựng" },
+    { id: "chat", ico: "🤖", lbl: "AI Chat" },
     { id: "settings", ico: "⚙️", lbl: "Cài đặt" },
 ];
 

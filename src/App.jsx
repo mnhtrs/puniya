@@ -7,6 +7,7 @@ import { prefetchAllAudio } from "./services/api";
 import HomePage from "./views/HomePage";
 import VocabPage from "./views/VocabPage";
 import SettingsPage from "./views/SettingsPage";
+import AIChatPage from "./views/AIChatPage";
 
 export default function App() {
     const [tab, setTab] = useState("home");
@@ -148,6 +149,7 @@ export default function App() {
             <main ref={mainRef} className="content" style={{ flex: 1 }}>
                 {tab === "home" && <HomePage vocab={vocab} setVocab={setVocab} streak={streak} />}
                 {tab === "vocab" && <VocabPage vocab={vocab} setVocab={setVocab} tags={tags} setTags={setTags} />}
+                {tab === "chat" && <AIChatPage vocab={vocab} />}
                 {tab === "settings" && <SettingsPage streak={streak} vocab={vocab} tags={tags} onImport={handleImport} />}
             </main>
 

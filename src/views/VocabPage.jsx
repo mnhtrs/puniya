@@ -186,12 +186,12 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
 
             <div style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 13, display: selMode ? "none" : "flex" }}>
-                <div className="sec-title" style={{ marginBottom: 0 }}>📚 Sổ tay từ vựng ({vpFiltered.length})</div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <button className="btn btn-s" style={{ height: 42, padding: "0 14px", display: "flex", gap: 6, fontSize: 13 }} onClick={() => setShowTagMgr(true)}>
-                        🏷️ <span style={{ fontWeight: 800 }}>Quản lý nhãn</span>
+                <div className="sec-title" style={{ marginBottom: 0, flex: "1 1 auto", minWidth: 0 }}>📚 Sổ tay từ vựng ({vpFiltered.length})</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                    <button className="btn btn-s vocab-header-btn" onClick={() => setShowTagMgr(true)}>
+                        🏷️ <span>Quản lý nhãn</span>
                     </button>
-                    <button className="btn btn-p" style={{ padding: "0 16px", borderRadius: 12, height: 42, fontSize: 13 }} onClick={() => setShowAdd(true)}>+ Thêm từ</button>
+                    <button className="btn btn-p vocab-header-btn" onClick={() => setShowAdd(true)}>+ Thêm từ</button>
                 </div>
             </div>
 
