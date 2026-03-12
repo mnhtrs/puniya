@@ -7,7 +7,7 @@
 // Global helper to call GPT-4o AI
 async function callGPT(prompt, maxTokens = 1500) {
     try {
-        const res = await fetch("/api/gpt", {
+        const res = await fetch("/api/expert", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

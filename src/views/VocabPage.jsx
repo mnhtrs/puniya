@@ -12,6 +12,7 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     const [cat, setCat] = useState("Tất cả");
     const [showAdd, setShowAdd] = useState(false);
     const [showTagMgr, setShowTagMgr] = useState(false);
+    const [showMultiDelete, setShowMultiDelete] = useState(false);
     const [detail, setDetail] = useState(null);
     const [editWord, setEditWord] = useState(null);
     const [selected, setSelected] = useState(new Set());
@@ -107,11 +108,11 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     }, [selected]);
 
     async function deleteSelected() {
-        if (!confirm(`Xóa ${selected.size} từ đã chọn?`)) return;
         for (const id of selected) await dbDelete("vocab", id);
         setVocab((prev) => prev.filter((v) => !selected.has(v.id)));
         setSelected(new Set());
         setSelMode(false);
+        setShowMultiDelete(false);
     }
 
     async function bulkUpdateTags(tagNames, action = "add") {
@@ -229,6 +230,18 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                 )}
             </div>
 
+            {selMode && (
+                <div style={{ marginBottom: 15, padding: "10px 15px", background: T.pinkP, borderRadius: 14, border: `2px solid ${T.pinkL}`, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, fontWeight: 800, color: T.pink }}>✨ Đã chọn {selected.size} từ</div>
+                    <button className="btn btn-p" style={{ height: 32, padding: "0 12px", fontSize: 13 }} onClick={() => {
+                        if (selected.size === vpFiltered.length) setSelected(new Set());
+                        else setSelected(new Set(vpFiltered.map(v => v.id)));
+                    }}>
+                        {selected.size === vpFiltered.length ? "Bỏ chọn" : "Chọn tất cả"}
+                    </button>
+                </div>
+            )}
+
             <div className="tabs" style={{ marginBottom: 18 }}>
                 {vpCats.map((c) => (
                     <div key={c} className={`tab ${cat === c ? "active" : ""} `} onClick={() => setCat(c)}>{c || "Chung"}</div>
@@ -330,10 +343,23 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
             {selMode && (
                 <div className="sel-actions" style={{ bottom: 80, padding: "10px 15px", gap: 8, maxWidth: "450px", width: "94%" }}>
-                    <button className="btn btn-s" style={{ padding: "0 10px", height: 40, fontSize: 11 }} onClick={() => { setSelMode(false); setSelected(new Set()); }}>Đóng</button>
                     <button className="btn" style={{ flex: 1, background: "#f1f5f9", height: 40, fontSize: 11, fontWeight: 700, color: T.text }} onClick={() => setEditWord({ multiTag: true, mode: "remove" })}>✖ Gỡ nhãn</button>
                     <button className="btn" style={{ flex: 1, background: T.pinkP, height: 40, fontSize: 11, fontWeight: 700, color: T.pink }} onClick={() => setEditWord({ multiTag: true, mode: "add" })}>➕ Thêm nhãn</button>
-                    <button className="btn" style={{ padding: "0 10px", background: "#fee2e2", color: "#ef4444", height: 40, fontSize: 11 }} onClick={deleteSelected}>Xóa</button>
+                    <button className="btn" style={{ padding: "0 10px", background: "#fee2e2", color: "#ef4444", height: 40, fontSize: 11 }} onClick={() => setShowMultiDelete(true)}>Xóa</button>
+                </div>
+            )}
+
+            {showMultiDelete && (
+                <div className="ov" onClick={() => setShowMultiDelete(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ padding: "30px 25px", textAlign: "center" }}>
+                        <div style={{ fontSize: 50, marginBottom: 15 }}>🗑️</div>
+                        <div className="sec-title" style={{ fontSize: 20, marginBottom: 8, textAlign: "center" }}>Xác nhận xóa</div>
+                        <div style={{ color: T.textL, marginBottom: 25, fontSize: 15 }}>Bạn có chắc chắn muốn xóa vĩnh viễn {selected.size} từ vựng đã chọn không?</div>
+                        <div style={{ display: "flex", gap: 12 }}>
+                            <button className="btn btn-s" style={{ flex: 1 }} onClick={() => setShowMultiDelete(false)}>Hủy</button>
+                            <button className="btn" style={{ flex: 1, background: "#ef4444", color: "#fff", fontWeight: 800 }} onClick={deleteSelected}>Xóa ngay</button>
+                        </div>
+                    </div>
                 </div>
             )}
 

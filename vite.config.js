@@ -4,7 +4,7 @@ import https from 'node:https'
 
 // =================================================================
 // Vite Plugin: API Middleware
-// Xử lý /api/chat và /api/gpt trong development mode
+// Xử lý /api/chat và /api/expert trong development mode
 // Trong production (Vercel), các serverless functions sẽ xử lý
 // =================================================================
 function apiMiddleware() {
@@ -20,7 +20,7 @@ function apiMiddleware() {
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
                 if (req.method !== 'POST') return next();
-                if (req.url !== '/api/chat' && req.url !== '/api/gpt') return next();
+                if (req.url !== '/api/chat' && req.url !== '/api/expert') return next();
 
                 let bodyData = [];
                 req.on('data', (chunk) => bodyData.push(chunk));
@@ -42,14 +42,14 @@ function apiMiddleware() {
                                 max_tokens: parsed.maxTokens || 1024,
                                 temperature: 0.7,
                             };
-                        } else if (req.url === '/api/gpt') {
+                        } else if (req.url === '/api/expert') {
                             groqBody = {
                                 model: 'llama-3.3-70b-versatile',
                                 messages: [
-                                    { role: 'system', content: 'Bạn là từ điển Thụy Điển - Việt.' },
+                                    { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Thụy Điển - Việt.' },
                                     { role: 'user', content: parsed.prompt },
                                 ],
-                                max_tokens: 512,
+                                max_tokens: 1024,
                             };
                         }
 

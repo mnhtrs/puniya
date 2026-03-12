@@ -103,7 +103,7 @@ export function TagManagerModal({ tags, setTags, onClose }) {
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="sec-title" style={{ marginBottom: 20 }}>🏷️ Quản lý nhãn</div>
+                <div className="sec-title" style={{ marginBottom: 20 }}>🏷️ Quản lý nhãn ({tags.length})</div>
 
                 <div style={{ marginBottom: 20 }}>
                     <button className="btn btn-p" style={{ width: "100%" }} onClick={() => setEditing({ name: "", color: T.pink })}>+ Tạo nhãn mới</button>
@@ -135,7 +135,7 @@ export function TagManagerModal({ tags, setTags, onClose }) {
                                     <div key={c} className={`color-dot ${editing.color === c ? "active" : ""}`} style={{ background: c }} onClick={() => setEditing({ ...editing, color: c })} />
                                 ))}
                                 <div style={{ position: "relative", width: 28, height: 28 }}>
-                                    <div className="color-dot" style={{ background: "linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>🎨</div>
+                                    <div className="color-dot" style={{ background: "linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)", display: "flex", alignItems: "center", justifyContent: "center" }}></div>
                                     <input
                                         type="color"
                                         value={editing.color || "#FF6B9D"}

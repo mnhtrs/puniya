@@ -40,6 +40,10 @@ Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấ
         });
 
         const data = await r.json();
+        if (!r.ok) {
+            res.status(r.status).json(data);
+            return;
+        }
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.status(200).json(data);
 

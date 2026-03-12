@@ -142,11 +142,11 @@ export default function App() {
     }
 
     return (
-        <div className="app-container">
+        <div className="app-container" style={{ height: tab === 'chat' ? '100dvh' : 'auto', overflow: tab === 'chat' ? 'hidden' : 'visible' }}>
             <KaTeXLoader />
             <Header streak={streak} vocab={vocab} onScrollToTop={scrollToTop} onGoHome={goHomeAndReset} />
 
-            <main ref={mainRef} className="content" style={{ flex: 1 }}>
+            <main ref={mainRef} className="content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: tab === 'chat' ? 0 : undefined }}>
                 {tab === "home" && <HomePage vocab={vocab} setVocab={setVocab} streak={streak} />}
                 {tab === "vocab" && <VocabPage vocab={vocab} setVocab={setVocab} tags={tags} setTags={setTags} />}
                 {tab === "chat" && <AIChatPage vocab={vocab} />}
