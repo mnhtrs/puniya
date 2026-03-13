@@ -39,7 +39,7 @@ function apiMiddleware() {
                                         : []),
                                     ...(parsed.messages || []),
                                 ],
-                                max_tokens: parsed.maxTokens || 1024,
+                                max_tokens: parsed.maxTokens || 4096,
                                 temperature: 0.7,
                             };
                         } else if (req.url === '/api/expert') {
@@ -49,7 +49,7 @@ function apiMiddleware() {
                                     { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Thụy Điển - Việt.' },
                                     { role: 'user', content: parsed.prompt },
                                 ],
-                                max_tokens: 1024,
+                                max_tokens: 4096,
                             };
                         }
 
