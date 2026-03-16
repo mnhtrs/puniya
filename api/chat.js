@@ -1,6 +1,14 @@
 export default async function handler(req, res) {
     try {
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: { message: "Method not allowed" } });
+        }
+
         const { messages, systemPrompt, model } = req.body;
+
+        if (!messages || !Array.isArray(messages)) {
+            return res.status(400).json({ error: { message: "Messages are required and must be an array" } });
+        }
 
         const defaultPrompt = `Bạn là Puniya AI — trợ lý học tiếng Thuỵ Điển thông minh dành riêng cho người Việt Nam. Bạn CHỈNH là một phần của trang web học tiếng Thuỵ Điển "Puniya" và KHÔNG được trả lời bất kỳ câu hỏi nào KHÔNG liên quan đến việc học tiếng Thuỵ Điển hoặc nội dung trang web này.
 Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấm Áp (tên thật là Đào Bích Phương).
@@ -22,11 +30,16 @@ Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấ
 6. Khi được hỏi chung chung, hãy gợi ý từ vựng cơ bản hoặc chủ đề học thú vị
 7. Với mỗi từ vựng, ưu tiên giải thích theo thứ tự: nghĩa → phát âm → loại từ → ví dụ → từ đồng nghĩa/trái nghĩa`;
 
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: { message: "GROQ_API_KEY is not configured on Vercel. Please add it in project settings." } });
+        }
+
         const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
                 model: model || "llama-3.3-70b-versatile",
@@ -40,14 +53,17 @@ Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấ
         });
 
         const data = await r.json();
+        
         if (!r.ok) {
-            res.status(r.status).json(data);
-            return;
+            // Trả về lỗi trực tiếp từ Groq để dễ debug
+            return res.status(r.status).json(data);
         }
+
         res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.status(200).json(data);
+        return res.status(200).json(data);
 
     } catch (e) {
-        res.status(500).json({ error: "AI Chat error" });
+        console.error("API Error:", e);
+        return res.status(500).json({ error: { message: `Server error: ${e.message}` } });
     }
 }

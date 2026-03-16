@@ -79,7 +79,7 @@ function apiMiddleware() {
                         apiReq.on('error', (e) => {
                             res.setHeader('Content-Type', 'application/json');
                             res.statusCode = 500;
-                            res.end(JSON.stringify({ error: e.message }));
+                            res.end(JSON.stringify({ error: { message: e.message } }));
                         });
 
                         apiReq.write(data);
@@ -87,7 +87,7 @@ function apiMiddleware() {
                     } catch (e) {
                         res.setHeader('Content-Type', 'application/json');
                         res.statusCode = 500;
-                        res.end(JSON.stringify({ error: e.message }));
+                        res.end(JSON.stringify({ error: { message: e.message } }));
                     }
                 });
             });
