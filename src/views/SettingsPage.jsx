@@ -8,6 +8,11 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
     const [notifEnabled, setNotifEnabled] = useState(localStorage.getItem("puniya_notif") === "true");
     const [notifInterval, setNotifInterval] = useState(localStorage.getItem("puniya_notif_min") || "30");
 
+    // API Key settings
+    const [groqKey, setGroqKey] = useState(localStorage.getItem("puniya_custom_groq_key") || "");
+    const [openaiKey, setOpenaiKey] = useState(localStorage.getItem("puniya_custom_openai_key") || "");
+    const [savedKeyNotice, setSavedKeyNotice] = useState(false);
+
     useEffect(() => {
         const wasEnabled = localStorage.getItem("puniya_notif") === "true";
         localStorage.setItem("puniya_notif", notifEnabled);
@@ -36,22 +41,45 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
             const d = JSON.parse(decodeURIComponent(escape(atob(importStr))));
             if (d.vocab && onImport) {
                 onImport(d.vocab, d.streak || 1, d.tags || []);
-                alert("🎉 Nhập dữ liệu thành công!");
+                alert("Nhập dữ liệu thành công!");
                 setImportStr("");
             } else {
-                alert("❌ Dữ liệu không hợp lệ.");
+                alert("Dữ liệu không hợp lệ.");
             }
         } catch (e) {
-            alert("❌ Lỗi giải mã dữ liệu. Vui lòng kiểm tra lại mã.");
+            alert("Lỗi giải mã dữ liệu. Vui lòng kiểm tra lại mã.");
         }
+    }
+
+    function saveApiKeys() {
+        if (groqKey.trim()) {
+            localStorage.setItem("puniya_custom_groq_key", groqKey.trim());
+        } else {
+            localStorage.removeItem("puniya_custom_groq_key");
+        }
+
+        if (openaiKey.trim()) {
+            localStorage.setItem("puniya_custom_openai_key", openaiKey.trim());
+        } else {
+            localStorage.removeItem("puniya_custom_openai_key");
+        }
+
+        setSavedKeyNotice(true);
+        setTimeout(() => setSavedKeyNotice(false), 3000);
     }
 
     return (
         <div className="main">
-            <div className="sec-title">⚙️ Cài đặt & Thông tin</div>
+            <div className="sec-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <i className="fa-solid fa-gear" style={{ color: T.pink }}></i>
+                <span>Cài đặt & Thông tin</span>
+            </div>
 
             <div className="card">
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>🔔 Thông báo nhắc nhở</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <i className="fa-solid fa-bell" style={{ color: T.pink }}></i>
+                    <span>Thông báo nhắc nhở</span>
+                </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <div style={{ fontSize: 14 }}>Bật thông báo ôn tập</div>
                     <label className="sw">
@@ -70,17 +98,71 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
             </div>
 
             <div className="card">
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 5 }}>Chuỗi ngày học (Streak)</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                    <i className="fa-solid fa-fire" style={{ color: "#FF6B6B" }}></i>
+                    <span>Chuỗi ngày học (Streak)</span>
+                </div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: T.pink, display: "flex", alignItems: "center", gap: 8 }}>
-                    🔥 {streak} ngày
+                    <i className="fa-solid fa-fire" style={{ color: "#FFD166" }}></i>
+                    <span>{streak} ngày liên tiếp</span>
                 </div>
             </div>
 
+            {/* Custom AI API Key Configuration */}
             <div className="card">
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Dữ liệu ứng dụng</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <i className="fa-solid fa-key" style={{ color: T.purple }}></i>
+                    <span>Cấu hình Khóa API AI (Tùy chọn)</span>
+                </div>
+                <div style={{ fontSize: 12, color: T.textL, marginBottom: 12, lineHeight: 1.5 }}>
+                    Mặc định Puniya dùng hệ thống dự phòng Groq/OpenAI tự động. Nếu muốn dùng hạn mức không giới hạn riêng của bạn, hãy nhập API Key cá nhân:
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: T.text, display: "block", marginBottom: 4 }}>
+                        Groq API Key (Miễn phí tốc độ cao, khuyến nghị):
+                    </label>
+                    <input
+                        className="inp"
+                        type="password"
+                        placeholder="gsk_..."
+                        value={groqKey}
+                        onChange={(e) => setGroqKey(e.target.value)}
+                    />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: T.text, display: "block", marginBottom: 4 }}>
+                        OpenAI API Key (Tùy chọn):
+                    </label>
+                    <input
+                        className="inp"
+                        type="password"
+                        placeholder="sk-..."
+                        value={openaiKey}
+                        onChange={(e) => setOpenaiKey(e.target.value)}
+                    />
+                </div>
+                <button className="btn btn-p" style={{ width: "100%", height: 38, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={saveApiKeys}>
+                    <i className="fa-solid fa-floppy-disk"></i> Lưu khóa API
+                </button>
+                {savedKeyNotice && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#10B981", fontWeight: 700, textAlign: "center" }}>
+                        <i className="fa-solid fa-circle-check" style={{ marginRight: 4 }}></i> Đã lưu cấu hình API thành công!
+                    </div>
+                )}
+            </div>
+
+            <div className="card">
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <i className="fa-solid fa-database" style={{ color: T.pink }}></i>
+                    <span>Dữ liệu ứng dụng</span>
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button className="btn btn-s" onClick={exportData}>📤 Xuất dữ liệu</button>
-                    <button className="btn btn-s" onClick={() => setShowD(true)}>📥 Nhập dữ liệu</button>
+                    <button className="btn btn-s" onClick={exportData} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <i className="fa-solid fa-arrow-up-from-bracket"></i> Xuất dữ liệu
+                    </button>
+                    <button className="btn btn-s" onClick={() => setShowD(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <i className="fa-solid fa-arrow-down-to-bracket"></i> Nhập dữ liệu
+                    </button>
                 </div>
 
                 {showD && (
@@ -89,24 +171,30 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
                             <div style={{ marginBottom: 20 }}>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: T.pink, marginBottom: 5 }}>MÃ DỮ LIỆU CỦA BẠN (XUẤT):</div>
                                 <textarea className="warea" readOnly value={dataStr} onClick={(e) => e.target.select()} style={{ height: 80, fontSize: 11, background: "#f8fafc" }} />
-                                <button className="btn btn-p btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(dataStr); alert("Đã sao chép!"); }}>📋 Sao chép</button>
+                                <button className="btn btn-p btn-sm" style={{ width: "100%", marginTop: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => { navigator.clipboard.writeText(dataStr); alert("Đã sao chép!"); }}>
+                                    <i className="fa-solid fa-copy"></i> Sao chép
+                                </button>
                             </div>
                         )}
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 700, color: T.textL, marginBottom: 5 }}>DÁN MÃ KHÔI PHỤC VÀO ĐÂY:</div>
                             <textarea className="warea" placeholder="Dán mã tại đây..." value={importStr} onChange={(e) => setImportStr(e.target.value)} style={{ height: 80, fontSize: 11 }} />
-                            <button className="btn btn-ok btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={handleImport}>🚀 Khôi phục ngay</button>
+                            <button className="btn btn-ok btn-sm" style={{ width: "100%", marginTop: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={handleImport}>
+                                <i className="fa-solid fa-rotate-left"></i> Khôi phục ngay
+                            </button>
                         </div>
                     </div>
                 )}
             </div>
 
             <div className="card card-g">
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.pink, textTransform: "uppercase" }}>Về dự án Puniya</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: T.pink, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                    <i className="fa-solid fa-heart" style={{ color: T.pink }}></i>
+                    <span>Về dự án Puniya</span>
+                </div>
                 <div style={{ fontSize: 13, color: T.text, lineHeight: "1.75", marginBottom: 15 }}>
-                    <b>Puniya</b> - Trang web học tiếng Thụy Điển & Khoa học dành riêng cho người Việt (Cụ thể là dành riêng cho em bphuong thôi).
-                    Tích hợp trí tuệ nhân tạo <b>GPT-4o</b> để dịch thuật chính xác và hệ thống lặp lại ngắt quãng <b>SRS</b> để ghi nhớ từ vựng hiệu quả nhất.
-                    Ngoài ra đây còn là món quà nho nhỏ tặng cho em Nước Sôi Ấm Áp, mong ẻm có thể học tốt hơn 👉👈
+                    <b>Puniya</b> - Trang web học tiếng Thụy Điển & Khoa học dành riêng cho người Việt (Cụ thể là dành riêng cho em Đào Bích Phương / Nước Sôi Ấm Áp 🌸).
+                    Tích hợp trí tuệ nhân tạo thông minh, từ điển Svenska Wiktionary kiểu Cambridge và hệ thống lặp lại ngắt quãng <b>SRS</b> để ghi nhớ từ vựng hiệu quả nhất.
                 </div>
 
                 <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 15 }}>
@@ -122,24 +210,21 @@ export default function SettingsPage({ streak, vocab, tags, onImport }) {
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                        <a href="https://facebook.com/picecreams.0e" target="_blank" rel="noreferrer" className="btn btn-s btn-sm" style={{ padding: "8px 0", gap: 5 }}>
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" width="16" height="16" alt="fb" />
-                            Facebook
+                        <a href="https://facebook.com/picecreams.0e" target="_blank" rel="noreferrer" className="btn btn-s btn-sm" style={{ padding: "8px 0", gap: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <i className="fa-brands fa-facebook" style={{ color: "#1877F2", fontSize: 16 }}></i>
+                            <span>Facebook</span>
                         </a>
-                        <a href="https://instagram.com/_.tira.mis.u" target="_blank" rel="noreferrer" className="btn btn-s btn-sm" style={{ padding: "8px 0", gap: 5 }}>
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" width="16" height="16" alt="ig" />
-                            Instagram
+                        <a href="https://instagram.com/_.tira.mis.u" target="_blank" rel="noreferrer" className="btn btn-s btn-sm" style={{ padding: "8px 0", gap: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <i className="fa-brands fa-instagram" style={{ color: "#E4405F", fontSize: 16 }}></i>
+                            <span>Instagram</span>
                         </a>
-                        <a href="https://tiktok.com/@trigonometry360" target="_blank" rel="noreferrer" className="btn" style={{ padding: "10px 0", gap: 8, background: "#000", color: "#fff", flex: 1, borderRadius: 14 }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743 2.897 2.897 0 0 1 3.103-4.488v-3.483a6.374 6.374 0 0 0-6.333 5.464c-.114.717-.114 1.448 0 2.165a6.349 6.349 0 0 0 10.822 3.968 6.341 6.341 0 0 0 2.108-4.711V8.627a8.263 8.263 0 0 0 5.555 2.235v-3.386a4.787 4.787 0 0 1-2.839-.79z" />
-                            </svg>
-                            TikTok
+                        <a href="https://tiktok.com/@trigonometry360" target="_blank" rel="noreferrer" className="btn btn-sm" style={{ padding: "8px 0", gap: 6, background: "#000", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 14 }}>
+                            <i className="fa-brands fa-tiktok" style={{ fontSize: 16 }}></i>
+                            <span>TikTok</span>
                         </a>
                     </div>
                 </div>
             </div>
-
         </div>
     );
 }

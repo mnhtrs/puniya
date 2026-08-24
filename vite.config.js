@@ -5,17 +5,15 @@ import https from 'node:https'
 // =================================================================
 // Vite Plugin: API Middleware
 // Xử lý /api/chat và /api/expert trong development mode
-// Trong production (Vercel), các serverless functions sẽ xử lý
 // =================================================================
 function apiMiddleware() {
-    let apiKey = '';
+    let serverApiKey = '';
 
     return {
         name: 'puniya-api-middleware',
         config(_, { mode }) {
-            // Đọc GROQ_API_KEY từ .env
             const env = loadEnv(mode, process.cwd(), '');
-            apiKey = env.GROQ_API_KEY;
+            serverApiKey = env.GROQ_API_KEY || '';
         },
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
@@ -28,6 +26,15 @@ function apiMiddleware() {
                     try {
                         const body = Buffer.concat(bodyData).toString();
                         const parsed = JSON.parse(body);
+                        const apiKey = parsed.apiKey || serverApiKey;
+
+                        if (!apiKey) {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.statusCode = 401;
+                            res.end(JSON.stringify({ error: { message: "No API Key configured. Please enter API key in Settings." } }));
+                            return;
+                        }
+
                         let groqBody;
 
                         if (req.url === '/api/chat') {
@@ -39,7 +46,7 @@ function apiMiddleware() {
                                         : []),
                                     ...(parsed.messages || []),
                                 ],
-                                max_tokens: parsed.maxTokens || 4096,
+                                max_tokens: parsed.maxTokens || 2048,
                                 temperature: 0.7,
                             };
                         } else if (req.url === '/api/expert') {
@@ -49,7 +56,7 @@ function apiMiddleware() {
                                     { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Thụy Điển - Việt.' },
                                     { role: 'user', content: parsed.prompt },
                                 ],
-                                max_tokens: 4096,
+                                max_tokens: 2048,
                             };
                         }
 
@@ -97,4 +104,17 @@ function apiMiddleware() {
 
 export default defineConfig({
     plugins: [react(), apiMiddleware()],
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        cors: true,
+        strictPort: true,
+        allowedHosts: true,
+    },
+    preview: {
+        host: '0.0.0.0',
+        port: 5173,
+        cors: true,
+        allowedHosts: true,
+    }
 })

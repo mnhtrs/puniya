@@ -1,11 +1,9 @@
-import { useState, useRef, useEffect } from "react";
-import { svAutocomplete, lookupWordFull } from "../services/api";
+import { useState, useRef } from "react";
+import { svAutocomplete, lookupWordFull, speakSv } from "../services/api";
 import { dbAdd, dbPut, dbDelete } from "../services/db";
 import { T } from "../constants/theme";
 import { SvFlag } from "./SvFlag";
 import { VnFlag } from "./VnFlag";
-// import { UkFlag } from "./UkFlag";
-import { speakSv } from "../services/api";
 
 function sanitize(str) {
     if (!str) return "";
@@ -15,7 +13,6 @@ function sanitize(str) {
 function TagSelector({ allTags, selectedNames, onAdd, onRemove }) {
     const [query, setQuery] = useState("");
     const [showSug, setShowSug] = useState(false);
-    const inRef = useRef(null);
 
     const sugs = allTags.filter(t =>
         t.name.toLowerCase().includes(query.toLowerCase()) &&
@@ -37,7 +34,6 @@ function TagSelector({ allTags, selectedNames, onAdd, onRemove }) {
                         if (existing) {
                             onAdd(existing.name);
                         } else {
-                            // Tạo tag mới nếu chưa có
                             const newTag = { name: query.trim(), color: T.pink };
                             const id = await dbAdd("tags", newTag);
                             onAdd(newTag.name, { ...newTag, id });
@@ -70,7 +66,7 @@ function TagSelector({ allTags, selectedNames, onAdd, onRemove }) {
                     };
                     return (
                         <span key={name} className="tag-badge" style={{ background: bg, color: isDark(bg) ? "#fff" : "#475569", width: "fit-content" }}>
-                            {name} <span className="rm" onClick={() => onRemove(name)} style={{ color: isDark(bg) ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.4)" }}>✕</span>
+                            {name} <span className="rm" onClick={() => onRemove(name)} style={{ color: isDark(bg) ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.4)" }}><i className="fa-solid fa-xmark"></i></span>
                         </span>
                     );
                 })}
@@ -80,7 +76,7 @@ function TagSelector({ allTags, selectedNames, onAdd, onRemove }) {
 }
 
 export function TagManagerModal({ tags, setTags, onClose }) {
-    const [editing, setEditing] = useState(null); // {id, name, color}
+    const [editing, setEditing] = useState(null);
 
     async function handleSave() {
         if (!editing.name.trim()) return;
@@ -103,10 +99,15 @@ export function TagManagerModal({ tags, setTags, onClose }) {
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="sec-title" style={{ marginBottom: 20 }}>🏷️ Quản lý nhãn ({tags.length})</div>
+                <div className="sec-title" style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                    <i className="fa-solid fa-tags" style={{ color: T.pink }}></i>
+                    <span>Quản lý nhãn ({tags.length})</span>
+                </div>
 
                 <div style={{ marginBottom: 20 }}>
-                    <button className="btn btn-p" style={{ width: "100%" }} onClick={() => setEditing({ name: "", color: T.pink })}>+ Tạo nhãn mới</button>
+                    <button className="btn btn-p" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => setEditing({ name: "", color: T.pink })}>
+                        <i className="fa-solid fa-plus"></i> Tạo nhãn mới
+                    </button>
                 </div>
 
                 <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
@@ -117,8 +118,12 @@ export function TagManagerModal({ tags, setTags, onClose }) {
                                 <span style={{ fontWeight: 800, color: T.text, fontSize: 14 }}>{t.name}</span>
                             </div>
                             <div style={{ display: "flex", gap: 6 }}>
-                                <button className="btn btn-s" style={{ padding: "6px 12px", fontSize: 11, borderRadius: 8 }} onClick={() => setEditing(t)}>✏️ Sửa</button>
-                                <button className="btn btn-s" style={{ padding: "6px 12px", fontSize: 11, borderRadius: 8, color: "#ef4444" }} onClick={() => handleDelete(t.id)}>🗑️ Xóa</button>
+                                <button className="btn btn-s" style={{ padding: "6px 12px", fontSize: 11, borderRadius: 8, display: "flex", alignItems: "center", gap: 4 }} onClick={() => setEditing(t)}>
+                                    <i className="fa-solid fa-pen-to-square"></i> Sửa
+                                </button>
+                                <button className="btn btn-s" style={{ padding: "6px 12px", fontSize: 11, borderRadius: 8, color: "#ef4444", display: "flex", alignItems: "center", gap: 4 }} onClick={() => handleDelete(t.id)}>
+                                    <i className="fa-solid fa-trash-can"></i> Xóa
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -182,16 +187,22 @@ export function WordDetailModal({ word, tags, onClose, onDelete, onEdit, onStar 
                         )}
                         <div style={{ fontSize: 16, color: T.text, marginTop: 8, fontWeight: 700 }}>{word.vi}</div>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                        <button className="btn btn-ico btn-s" onClick={() => onStar(word.id, !word.starred)} style={{ borderRadius: 12, border: "none", background: word.starred ? "#FEF3C7" : "rgba(0,0,0,0.05)", color: word.starred ? "#F59E0B" : "#94a3b8" }}>
-                            {word.starred ? "⭐" : "☆"}
+                    <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                            className="btn btn-ico"
+                            style={{ width: 42, height: 42, background: word.starred ? "#FEF3C7" : "rgba(0,0,0,0.05)", color: word.starred ? "#F59E0B" : "#94a3b8", fontSize: 18 }}
+                            onClick={() => onStar(word.id, !word.starred)}
+                            title={word.starred ? "Bỏ yêu thích" : "Đánh dấu yêu thích"}
+                        >
+                            <i className={word.starred ? "fa-solid fa-star" : "fa-regular fa-star"}></i>
                         </button>
-                        <button className="btn btn-ico btn-p" onClick={() => speakSv(word.sv)} style={{ borderRadius: 12 }}>🔊</button>
-                        <button className="btn btn-ico btn-s" onClick={onEdit} style={{ borderRadius: 12 }}>✏️</button>
+                        <button className="btn btn-ico btn-p" style={{ width: 42, height: 42, fontSize: 18 }} onClick={() => speakSv(word.sv)} title="Nghe phát âm chuẩn">
+                            <i className="fa-solid fa-volume-high"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 14 }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 15 }}>
                     {vCats.map(cName => {
                         const t = tags.find(tag => tag.name === cName);
                         const bg = t?.color || T.pink;
@@ -203,13 +214,15 @@ export function WordDetailModal({ word, tags, onClose, onDelete, onEdit, onStar 
                             const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
                             return brightness < 155;
                         };
-                        return <span key={cName} className="bdg" style={{ background: bg, color: isDark(bg) ? "#fff" : T.text, fontSize: 11, padding: "3px 10px" }}>{cName}</span>
+                        return <span key={cName} className="bdg" style={{ background: bg, color: isDark(bg) ? "#fff" : T.text, fontSize: 11, padding: "3px 10px" }}>{cName}</span>;
                     })}
                 </div>
 
                 {ai?.definitions?.length > 0 && (
                     <div style={{ marginBottom: 13 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: T.textL, marginBottom: 7 }}>ĐỊNH NGHĨA</div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: T.textL, marginBottom: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                            <i className="fa-solid fa-book-open"></i> ĐỊNH NGHĨA
+                        </div>
                         {ai.definitions.map((d, i) => (
                             <div key={i} style={{ fontSize: 14, color: T.text, marginBottom: 6, paddingLeft: 12, borderLeft: `2px solid ${T.pinkL}`, lineHeight: 1.6 }}>{d.vi}</div>
                         ))}
@@ -218,11 +231,22 @@ export function WordDetailModal({ word, tags, onClose, onDelete, onEdit, onStar 
 
                 {ai?.examples?.length > 0 && (
                     <div style={{ marginBottom: 15 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: T.textL, marginBottom: 7, textTransform: "uppercase" }}>💬 Ví dụ sử dụng</div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: T.textL, marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                            <i className="fa-solid fa-comments"></i> Ví dụ sử dụng
+                        </div>
                         {ai.examples.map((ex, ei) => (
                             <div key={ei} style={{ marginBottom: 8, background: "#f8fafc", padding: "10px 14px", borderRadius: 12, border: "1px solid #e2e8f0" }}>
-                                <div style={{ fontWeight: 700, color: T.purple, fontSize: 14 }}><SvFlag size={14} /> {ex.sv}</div>
-                                <div style={{ fontSize: 13, color: T.text, marginTop: 4 }}><VnFlag size={14} /> {ex.vi}</div>
+                                <div style={{ fontWeight: 700, color: T.purple, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        <SvFlag size={14} /> {ex.sv}
+                                    </div>
+                                    <button className="btn btn-ico" style={{ width: 22, height: 22, fontSize: 10, background: "transparent", color: T.purple }} onClick={() => speakSv(ex.sv)}>
+                                        <i className="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
+                                <div style={{ fontSize: 13, color: T.text, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                                    <VnFlag size={14} /> {ex.vi}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -230,16 +254,18 @@ export function WordDetailModal({ word, tags, onClose, onDelete, onEdit, onStar 
 
                 <button
                     className="btn btn-s"
-                    style={{ width: "100%", marginBottom: 10, fontSize: 13, padding: "8px" }}
+                    style={{ width: "100%", marginBottom: 10, fontSize: 13, padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     onClick={() => {
                         window.location.search = `?q=${encodeURIComponent(word.sv)}`;
                     }}>
-                    📖 Tra cứu đầy đủ trên Từ Điển
+                    <i className="fa-solid fa-book-bookmark"></i> Tra cứu chi tiết trên Từ Điển
                 </button>
 
-                <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-                    <button className="btn btn-s" style={{ flex: 1, color: "#ef4444", fontWeight: 700, borderRadius: 12, height: 46 }} onClick={() => onDelete(word.id)}>🗑️ Xóa từ</button>
-                    <button className="btn btn-p" style={{ flex: 1.5, borderRadius: 12, height: 46 }} onClick={onClose}>Xong</button>
+                <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+                    <button className="btn btn-s" style={{ flex: 1, color: "#ef4444", fontWeight: 700, borderRadius: 12, height: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => onDelete(word.id)}>
+                        <i className="fa-solid fa-trash-can"></i> Xóa từ
+                    </button>
+                    <button className="btn btn-p" style={{ flex: 1.5, borderRadius: 12, height: 44 }} onClick={onClose}>Xong</button>
                 </div>
             </div>
         </div>
@@ -301,14 +327,23 @@ export function AddWordModal({ tags, onClose, onSave }) {
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="sec-title" style={{ marginBottom: 22 }}>✨ Thêm từ mới</div>
+                <div className="sec-title" style={{ marginBottom: 22, display: "flex", alignItems: "center", gap: 8 }}>
+                    <i className="fa-solid fa-wand-magic-sparkles" style={{ color: T.pink }}></i>
+                    <span>Thêm từ mới</span>
+                </div>
                 <div style={{ position: "relative", marginBottom: 18 }}>
                     <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}><SvFlag size={14} /> Từ tiếng Thụy Điển</label>
                     <input className="inp" placeholder="Gõ từ..." value={sv} onChange={(e) => handleSvChange(e.target.value)} onFocus={() => sugs.length > 0 && setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)} />
-                    {loading && <div style={{ fontSize: 11, color: T.pink, marginTop: 6, fontWeight: 700, fontStyle: "italic", animation: "fadeIn 0.3s" }}>⏳ Đang tra từ điển và phân tích ngữ pháp...</div>}
+                    {loading && <div style={{ fontSize: 11, color: T.pink, marginTop: 6, fontWeight: 700, fontStyle: "italic", animation: "fadeIn 0.3s" }}>
+                        <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 5 }}></i> Đang tra từ điển và phân tích ngữ pháp...
+                    </div>}
                     {showSug && (
                         <div className="sug-wrap">
-                            {sugs.map((s, i) => <div key={i} className="sug-item" onMouseDown={() => pickWord(s)}>🔍 {s}</div>)}
+                            {sugs.map((s, i) => (
+                                <div key={i} className="sug-item" onMouseDown={() => pickWord(s)}>
+                                    <i className="fa-solid fa-magnifying-glass" style={{ marginRight: 8, color: T.textL }}></i> {s}
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -319,7 +354,9 @@ export function AddWordModal({ tags, onClose, onSave }) {
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🏷️ Nhãn (Chọn nhiều)</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                        <i className="fa-solid fa-tags" style={{ color: T.pink }}></i> Nhãn (Chọn nhiều)
+                    </label>
                     <TagSelector
                         allTags={tags}
                         selectedNames={selectedTags}
@@ -330,7 +367,9 @@ export function AddWordModal({ tags, onClose, onSave }) {
 
                 <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
                     <button className="btn btn-s" style={{ flex: 1, height: 48, borderRadius: 12 }} onClick={onClose}>Hủy</button>
-                    <button className="btn btn-p" style={{ flex: 2, height: 48, borderRadius: 12 }} onClick={doSave} disabled={!sv.trim() || !viVal.trim() || loading}>Lưu từ vào sổ tay</button>
+                    <button className="btn btn-p" style={{ flex: 2, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={doSave} disabled={!sv.trim() || !viVal.trim() || loading}>
+                        <i className="fa-solid fa-floppy-disk"></i> Lưu từ vào sổ tay
+                    </button>
                 </div>
             </div>
         </div>
@@ -347,7 +386,10 @@ export function EditWordModal({ tags, word, isMulti, multiMode, onClose, onSave 
     return (
         <div className="ov" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div className="sec-title">{title}</div>
+                <div className="sec-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <i className="fa-solid fa-pen-to-square" style={{ color: T.pink }}></i>
+                    <span>{title}</span>
+                </div>
 
                 {!isMulti && (
                     <>
@@ -363,7 +405,9 @@ export function EditWordModal({ tags, word, isMulti, multiMode, onClose, onSave 
                 )}
 
                 <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "block", marginBottom: 5 }}>🏷️ {multiMode === "remove" ? "Chọn nhãn cần gỡ" : "Chọn nhãn"}</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: T.textL, display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                        <i className="fa-solid fa-tags" style={{ color: T.pink }}></i> {multiMode === "remove" ? "Chọn nhãn cần gỡ" : "Chọn nhãn"}
+                    </label>
                     <TagSelector
                         allTags={tags}
                         selectedNames={selectedTags}
@@ -376,12 +420,18 @@ export function EditWordModal({ tags, word, isMulti, multiMode, onClose, onSave 
                     <button className="btn btn-s" style={{ flex: 1 }} onClick={onClose}>Hủy</button>
                     {isMulti ? (
                         multiMode === "add" ? (
-                            <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave(selectedTags, "add")} disabled={selectedTags.length === 0}>Xác nhận Thêm</button>
+                            <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave(selectedTags, "add")} disabled={selectedTags.length === 0}>
+                                <i className="fa-solid fa-check"></i> Xác nhận Thêm
+                            </button>
                         ) : (
-                            <button className="btn" style={{ flex: 2, background: "#fee2e2", color: "#ef4444", fontWeight: 700 }} onClick={() => onSave(selectedTags, "remove")} disabled={selectedTags.length === 0}>Xác nhận Gỡ</button>
+                            <button className="btn" style={{ flex: 2, background: "#fee2e2", color: "#ef4444", fontWeight: 700 }} onClick={() => onSave(selectedTags, "remove")} disabled={selectedTags.length === 0}>
+                                <i className="fa-solid fa-trash-can"></i> Xác nhận Gỡ
+                            </button>
                         )
                     ) : (
-                        <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave({ ...word, sv, vi, categories: selectedTags, category: selectedTags[0] || "Chung" })}>Lưu thay đổi</button>
+                        <button className="btn btn-p" style={{ flex: 2 }} onClick={() => onSave({ ...word, sv, vi, categories: selectedTags, category: selectedTags[0] || "Chung" })}>
+                            <i className="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
                     )}
                 </div>
             </div>

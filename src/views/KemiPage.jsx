@@ -3,6 +3,7 @@ import { T } from "../constants/theme";
 import { KEMI } from "../constants/kemi";
 import { SvFlag } from "../components/SvFlag";
 import { VnFlag } from "../components/VnFlag";
+import { SubHeader } from "../components/SubHeader";
 
 export default function KemiPage({ onBack }) {
     const [cat, setCat] = useState("Tất cả");
@@ -14,12 +15,13 @@ export default function KemiPage({ onBack }) {
 
     return (
         <div className="main">
-            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 11 }}>
-                <button className="btn btn-s" style={{ fontSize: 12, padding: "5px 12px" }} onClick={onBack}>
-                    ← Trang chủ
-                </button>
-                <div className="sec-title" style={{ marginBottom: 0 }}>⚗️ Hóa học (Kemi)</div>
-            </div>
+            <SubHeader
+                title="Hóa học (Kemi)"
+                icon="fa-solid fa-flask"
+                iconColor="#10B981"
+                iconBg="#ECFDF5"
+                onBack={onBack}
+            />
 
             <div className="tabs">
                 {cats.map((c) => (
@@ -35,14 +37,19 @@ export default function KemiPage({ onBack }) {
                         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                         onClick={() => setExpanded(expanded === k.id ? null : k.id)}
                     >
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <span style={{ fontSize: 20 }}>{k.emoji}</span>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F0FFF4", color: "#10B981", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                                <i className="fa-solid fa-atom"></i>
+                            </div>
                             <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase", letterSpacing: 0.5 }}>{k.area} · {k.klass}</div>
                                 <div style={{ fontSize: 16, fontWeight: 900, color: T.text }}>{k.title}</div>
                             </div>
                         </div>
-                        <div style={{ fontSize: 13, color: T.pink }}>{expanded === k.id ? "Thu gọn ▲" : "Chi tiết ▼"}</div>
+                        <div style={{ fontSize: 13, color: T.pink, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>{expanded === k.id ? "Thu gọn" : "Chi tiết"}</span>
+                            <i className={expanded === k.id ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down"}></i>
+                        </div>
                     </div>
 
                     {expanded === k.id && (
@@ -51,7 +58,9 @@ export default function KemiPage({ onBack }) {
 
                             {k.keyPoints && k.keyPoints.length > 0 && (
                                 <div style={{ marginBottom: 14 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.pink, marginBottom: 7, textTransform: "uppercase" }}>Tóm tắt lý thuyết</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.pink, marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-list-check"></i> Tóm tắt lý thuyết
+                                    </div>
                                     <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 6 }}>
                                         {k.keyPoints.map((p, i) => (
                                             <li key={i} style={{ fontSize: 13, color: T.text, lineHeight: 1.5 }}>
@@ -64,7 +73,9 @@ export default function KemiPage({ onBack }) {
 
                             {k.examples && k.examples.length > 0 && (
                                 <div style={{ marginBottom: 14 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#3b82f6", marginBottom: 7, textTransform: "uppercase" }}>Ví dụ tiếng Thụy Điển</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#3b82f6", marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-comments"></i> Ví dụ tiếng Thụy Điển
+                                    </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                         {k.examples.map((ex, i) => (
                                             <div key={i} style={{ padding: "10px 14px", background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe" }}>
@@ -82,7 +93,9 @@ export default function KemiPage({ onBack }) {
 
                             {k.exercises && k.exercises.length > 0 && (
                                 <div>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#059669", marginBottom: 7, textTransform: "uppercase" }}>Bài tập vận dụng</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#059669", marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-pencil"></i> Bài tập vận dụng
+                                    </div>
                                     {k.exercises.map((ex, i) => {
                                         const key = `${k.id}-${i}`;
                                         return (

@@ -4,50 +4,40 @@ export default async function handler(req, res) {
             return res.status(405).json({ error: { message: "Method not allowed" } });
         }
 
-        const { messages, systemPrompt, model } = req.body;
+        const { messages, systemPrompt, model, apiKey: clientApiKey } = req.body;
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: { message: "Messages are required and must be an array" } });
         }
 
-        const defaultPrompt = `Bạn là Puniya AI — trợ lý học tiếng Thuỵ Điển thông minh dành riêng cho người Việt Nam. Bạn CHỈNH là một phần của trang web học tiếng Thuỵ Điển "Puniya" và KHÔNG được trả lời bất kỳ câu hỏi nào KHÔNG liên quan đến việc học tiếng Thuỵ Điển hoặc nội dung trang web này.
-Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấm Áp (tên thật là Đào Bích Phương).
-📌 NỘI DUNG TRANG WEB PUNIYA BAO GỒM:
-- Từ vựng tiếng Thuỵ Điển (Sổ tay từ vựng, tra từ điển kiểu Cambridge)
-- Ngữ pháp tiếng Thuỵ Điển (14 chủ điểm ngữ pháp cơ bản đến nâng cao)
-- 4 kỹ năng: Nghe, Nói, Đọc, Viết tiếng Thuỵ Điển
-- Flashcard, Ôn tập kiểu Duolingo
-- Toán học & Hoá học bằng tiếng Thuỵ Điển (cấp Åk 7-9 / Gymnasium)
-- Văn hoá Thuỵ Điển, lịch sử, truyền thống (Midsommar, Lucia, Nobel, ABBA, Viking...)
-- Phát âm tiếng Thuỵ Điển (IPA, quy tắc đặc biệt: sj/skj/sch, tj/kj/k...)
+        const defaultPrompt = `Bạn là Puniya AI — trợ lý học tiếng Thụy Điển thông minh, ngọt ngào dành cho người Việt Nam.
+Bạn hỗ trợ giải thích từ vựng (Nghĩa, IPA, Böjning, Ví dụ), ngữ pháp, luyện 4 kỹ năng và toán hóa Thụy Điển.
+Luôn luôn trả lời thân thiện, ngọt ngào bằng tiếng Việt.`;
 
-📌 QUY TẮC BẮT BUỘC:
-1. LUÔN ưu tiên giải thích từ vựng (xét theo cấp độ từ thấp nhất A1 → A2 → B1 → B2 → C1 → C2)
-2. Khi giải thích từ vựng, LUÔN cung cấp: từ tiếng Thuỵ Điển, nghĩa tiếng Việt, phiên âm IPA nếu biết, ví dụ câu
-3. Trả lời bằng tiếng Việt là chính, kèm tiếng Thuỵ Điển khi cần
-4. NẾU câu hỏi KHÔNG liên quan đến tiếng Thuỵ Điển, văn hoá Thuỵ Điển hoặc nội dung trang web, hãy từ chối lịch sự: "Mình là Puniya AI, chỉ hỗ trợ bạn học tiếng Thuỵ Điển thôi nhé! Bạn có muốn học từ vựng hoặc ngữ pháp gì không?"
-5. Luôn thân thiện, dễ hiểu, dùng emoji phù hợp
-6. Khi được hỏi chung chung, hãy gợi ý từ vựng cơ bản hoặc chủ đề học thú vị
-7. Với mỗi từ vựng, ưu tiên giải thích theo thứ tự: nghĩa → phát âm → loại từ → ví dụ → từ đồng nghĩa/trái nghĩa`;
-
-        const apiKey = process.env.GROQ_API_KEY;
+        const apiKey = clientApiKey || process.env.GROQ_API_KEY;
         if (!apiKey) {
-            return res.status(500).json({ error: { message: "GROQ_API_KEY is not configured on Vercel. Please add it in project settings." } });
+            return res.status(401).json({
+                error: {
+                    message: "Chưa có GROQ_API_KEY. Vui lòng nhập API Key miễn phí trong mục Cài đặt AI của trang web."
+                }
+            });
         }
+
+        const targetModel = model || "llama-3.3-70b-versatile";
 
         const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
+                "Authorization": `Bearer ${apiKey.trim()}`
             },
             body: JSON.stringify({
-                model: model || "llama-3.3-70b-versatile",
+                model: targetModel,
                 messages: [
                     { role: "system", content: systemPrompt || defaultPrompt },
                     ...messages
                 ],
-                max_tokens: 1024,
+                max_tokens: 2048,
                 temperature: 0.7
             })
         });
@@ -55,7 +45,6 @@ Bạn là trợ lý ảo của em bíe xinh xắn cute tên là Nước Sôi Ấ
         const data = await r.json();
         
         if (!r.ok) {
-            // Trả về lỗi trực tiếp từ Groq để dễ debug
             return res.status(r.status).json(data);
         }
 

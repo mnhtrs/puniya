@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { T, getCatColor } from "../constants/theme";
+import { T } from "../constants/theme";
 import { speakSv } from "../services/api";
 import { dbAdd, dbPut, dbDelete } from "../services/db";
 import { WordDetailModal, AddWordModal, EditWordModal, TagManagerModal } from "../components/Modals";
-// import { SvFlag } from "../components/SvFlag";
-// import { VnFlag } from "../components/VnFlag";
-// import { UkFlag } from "../components/UkFlag";
 
 export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     const [search, setSearch] = useState("");
@@ -48,7 +45,7 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
         setShowVSug(false);
         if (!term.trim()) return;
         setVHistory(prev => {
-            const newH = [term, ...prev.filter(h => h !== term)].slice(0, 10);
+            const newH = [term, ...prev.filter(h => h.toLowerCase() !== term.toLowerCase())].slice(0, 10);
             return newH;
         });
     }
@@ -63,7 +60,7 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
     const vpCats = ["Tất cả", ...new Set(vocab.flatMap((v) => v.categories || (v.category ? [v.category] : [])))];
 
     const vpFiltered = vocab.filter((v) => {
-        const ms = !search || v.sv.toLowerCase().includes(search.toLowerCase()) || v.vi.includes(search);
+        const ms = !search || v.sv.toLowerCase().includes(search.toLowerCase()) || v.vi.toLowerCase().includes(search.toLowerCase());
         const vCats = v.categories || (v.category ? [v.category] : []);
         const mc = cat === "Tất cả" || vCats.includes(cat);
         return ms && mc;
@@ -101,7 +98,6 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
             setDetail(word);
         }
     }
-
 
     useEffect(() => {
         if (selected.size === 0) setSelMode(false);
@@ -176,28 +172,29 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
         if (detail && detail.id === id) setDetail(updated);
     }
 
-    async function toggleStar(word) {
-        const updated = { ...word, starred: !word.starred };
-        await dbPut("vocab", updated);
-        setVocab((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-    }
-
     return (
         <div className="main">
-
-
             <div style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 13, display: selMode ? "none" : "flex" }}>
-                <div className="sec-title" style={{ marginBottom: 0, flex: "1 1 auto", minWidth: 0 }}>📚 Sổ tay từ vựng ({vpFiltered.length})</div>
+                <div className="sec-title" style={{ marginBottom: 0, flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                    <i className="fa-solid fa-book" style={{ color: T.pink }}></i>
+                    <span>Sổ tay từ vựng ({vpFiltered.length})</span>
+                </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                    <button className="btn btn-s vocab-header-btn" onClick={() => setShowTagMgr(true)}>
-                        🏷️ <span>Quản lý nhãn</span>
+                    <button className="btn btn-s vocab-header-btn" onClick={() => setShowTagMgr(true)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <i className="fa-solid fa-tags"></i>
+                        <span>Nhãn</span>
                     </button>
-                    <button className="btn btn-p vocab-header-btn" onClick={() => setShowAdd(true)}>+ Thêm từ</button>
+                    <button className="btn btn-p vocab-header-btn" onClick={() => setShowAdd(true)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <i className="fa-solid fa-plus"></i>
+                        <span>Thêm</span>
+                    </button>
                 </div>
             </div>
 
             <div className="s-wrap" style={{ position: "relative" }}>
-                <span className="s-ico">🔍</span>
+                <span className="s-ico">
+                    <i className="fa-solid fa-magnifying-glass"></i>
+                </span>
                 <input
                     className="inp inp-ico"
                     placeholder="Tìm từ Thuỵ Điển hoặc nghĩa tiếng Việt..."
@@ -215,15 +212,22 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                 />
                 {showVSug && (
                     <div className="sug-wrap" style={{ top: "100%", zIndex: 100 }}>
-                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: T.pink, display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border} ` }}>
-                            <span>🕒 TÌM KIẾM GẦN ĐÂY</span>
+                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: T.pink, display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border}` }}>
+                            <span>
+                                <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 6 }}></i>
+                                TÌM KIẾM GẦN ĐÂY
+                            </span>
                             <span onMouseDown={(e) => { e.preventDefault(); setVHistory([]); }} style={{ cursor: "pointer", opacity: 0.8 }}>Xoá hết</span>
                         </div>
                         {vSugs.map((v, i) => (
                             <div key={i} className="sug-item" onMouseDown={(e) => { e.preventDefault(); doVocabSearch(v); }}>
-                                <span style={{ marginRight: 10, opacity: 0.5 }}>🕒</span>
+                                <span style={{ marginRight: 10, opacity: 0.5 }}>
+                                    <i className="fa-solid fa-clock-rotate-left"></i>
+                                </span>
                                 {v}
-                                <span onMouseDown={(e) => { e.preventDefault(); removeVHistoryItem(e, v); }} style={{ float: "right", padding: "0 5px", color: T.pink, opacity: 0.5 }}>×</span>
+                                <span onMouseDown={(e) => { e.preventDefault(); removeVHistoryItem(e, v); }} style={{ float: "right", padding: "0 5px", color: T.pink, opacity: 0.5 }}>
+                                    <i className="fa-solid fa-xmark"></i>
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -232,7 +236,10 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
             {selMode && (
                 <div style={{ marginBottom: 15, padding: "10px 15px", background: T.pinkP, borderRadius: 14, border: `2px solid ${T.pinkL}`, display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, fontWeight: 800, color: T.pink }}>✨ Đã chọn {selected.size} từ</div>
+                    <div style={{ flex: 1, fontWeight: 800, color: T.pink, display: "flex", alignItems: "center", gap: 6 }}>
+                        <i className="fa-solid fa-check-double"></i>
+                        <span>Đã chọn {selected.size} từ</span>
+                    </div>
                     <button className="btn btn-p" style={{ height: 32, padding: "0 12px", fontSize: 13 }} onClick={() => {
                         if (selected.size === vpFiltered.length) setSelected(new Set());
                         else setSelected(new Set(vpFiltered.map(v => v.id)));
@@ -244,7 +251,7 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
             <div className="tabs" style={{ marginBottom: 18 }}>
                 {vpCats.map((c) => (
-                    <div key={c} className={`tab ${cat === c ? "active" : ""} `} onClick={() => setCat(c)}>{c || "Chung"}</div>
+                    <div key={c} className={`tab ${cat === c ? "active" : ""}`} onClick={() => setCat(c)}>{c || "Chung"}</div>
                 ))}
             </div>
 
@@ -268,12 +275,12 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                                 {selMode && (
                                     <div style={{
                                         width: 22, height: 22, borderRadius: "50%",
-                                        border: `2px solid ${isS ? T.pink : "#cbd5e1"} `,
+                                        border: `2px solid ${isS ? T.pink : "#cbd5e1"}`,
                                         background: isS ? T.pink : "transparent",
                                         display: "flex", alignItems: "center", justifyContent: "center",
-                                        color: "white", fontSize: 12, flexShrink: 0
+                                        color: "white", fontSize: 11, flexShrink: 0
                                     }}>
-                                        {isS && "✓"}
+                                        {isS && <i className="fa-solid fa-check"></i>}
                                     </div>
                                 )}
                                 <div style={{ flex: 1 }}>
@@ -295,7 +302,6 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                                         {vCats.map(cName => {
                                             const t = tags.find(tag => tag.name === cName);
                                             const bg = t?.color || T.pink;
-                                            // Hàm tính độ sáng để chọn màu chữ (Contrast)
                                             const isDark = (color) => {
                                                 const hex = color.replace('#', '');
                                                 const r = parseInt(hex.substr(0, 2), 16);
@@ -323,11 +329,12 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                                         className="btn btn-ico"
                                         style={{ width: 34, height: 34, background: v.starred ? "#FEF3C7" : "rgba(0,0,0,0.05)", color: v.starred ? "#F59E0B" : "#94a3b8", fontSize: 14, border: "none" }}
                                         onClick={(e) => { e.stopPropagation(); handleStar(v.id, !v.starred); }}
+                                        title={v.starred ? "Bỏ yêu thích" : "Đánh dấu yêu thích"}
                                     >
-                                        {v.starred ? "⭐" : "☆"}
+                                        <i className={v.starred ? "fa-solid fa-star" : "fa-regular fa-star"}></i>
                                     </button>
-                                    <button className="btn btn-ico" style={{ width: 34, height: 34, background: "rgba(255, 107, 157, 0.1)", color: T.pink, border: "none" }} onClick={(e) => { e.stopPropagation(); speakSv(v.sv); }}>
-                                        🔊
+                                    <button className="btn btn-ico" style={{ width: 34, height: 34, background: "rgba(255, 107, 157, 0.1)", color: T.pink, border: "none" }} onClick={(e) => { e.stopPropagation(); speakSv(v.sv); }} title="Nghe phát âm">
+                                        <i className="fa-solid fa-volume-high"></i>
                                     </button>
                                 </div>
                             </div>
@@ -335,7 +342,9 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
                     })
                 ) : (
                     <div className="empty" style={{ gridColumn: "1/-1", padding: 40, textAlign: "center" }}>
-                        <div className="e-ico" style={{ fontSize: 50, marginBottom: 10 }}>📔</div>
+                        <div className="e-ico" style={{ fontSize: 44, marginBottom: 10, color: T.pink }}>
+                            <i className="fa-solid fa-book-bookmark"></i>
+                        </div>
                         <p style={{ color: T.textL, fontWeight: 700 }}>{search ? "Không tìm thấy từ nào..." : "Sổ tay của bạn đang trống."}</p>
                     </div>
                 )}
@@ -343,16 +352,24 @@ export default function VocabPage({ vocab, setVocab, tags, setTags }) {
 
             {selMode && (
                 <div className="sel-actions" style={{ bottom: 80, padding: "10px 15px", gap: 8, maxWidth: "450px", width: "94%" }}>
-                    <button className="btn" style={{ flex: 1, background: "#f1f5f9", height: 40, fontSize: 11, fontWeight: 700, color: T.text }} onClick={() => setEditWord({ multiTag: true, mode: "remove" })}>✖ Gỡ nhãn</button>
-                    <button className="btn" style={{ flex: 1, background: T.pinkP, height: 40, fontSize: 11, fontWeight: 700, color: T.pink }} onClick={() => setEditWord({ multiTag: true, mode: "add" })}>➕ Thêm nhãn</button>
-                    <button className="btn" style={{ padding: "0 10px", background: "#fee2e2", color: "#ef4444", height: 40, fontSize: 11 }} onClick={() => setShowMultiDelete(true)}>Xóa</button>
+                    <button className="btn" style={{ flex: 1, background: "#f1f5f9", height: 40, fontSize: 11, fontWeight: 700, color: T.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={() => setEditWord({ multiTag: true, mode: "remove" })}>
+                        <i className="fa-solid fa-tag fa-slash"></i> Gỡ nhãn
+                    </button>
+                    <button className="btn" style={{ flex: 1, background: T.pinkP, height: 40, fontSize: 11, fontWeight: 700, color: T.pink, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onClick={() => setEditWord({ multiTag: true, mode: "add" })}>
+                        <i className="fa-solid fa-tag"></i> Thêm nhãn
+                    </button>
+                    <button className="btn" style={{ padding: "0 14px", background: "#fee2e2", color: "#ef4444", height: 40, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }} onClick={() => setShowMultiDelete(true)}>
+                        <i className="fa-solid fa-trash-can"></i> Xóa
+                    </button>
                 </div>
             )}
 
             {showMultiDelete && (
                 <div className="ov" onClick={() => setShowMultiDelete(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()} style={{ padding: "30px 25px", textAlign: "center" }}>
-                        <div style={{ fontSize: 50, marginBottom: 15 }}>🗑️</div>
+                        <div style={{ fontSize: 44, color: "#ef4444", marginBottom: 15 }}>
+                            <i className="fa-solid fa-trash-can"></i>
+                        </div>
                         <div className="sec-title" style={{ fontSize: 20, marginBottom: 8, textAlign: "center" }}>Xác nhận xóa</div>
                         <div style={{ color: T.textL, marginBottom: 25, fontSize: 15 }}>Bạn có chắc chắn muốn xóa vĩnh viễn {selected.size} từ vựng đã chọn không?</div>
                         <div style={{ display: "flex", gap: 12 }}>

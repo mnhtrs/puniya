@@ -1,20 +1,27 @@
 export default async function handler(req, res) {
   try {
-    const { prompt, maxTokens } = req.body;
+    const { prompt, maxTokens, apiKey: clientApiKey } = req.body;
+
+    const apiKey = clientApiKey || process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(401).json({
+        error: { message: "Chưa cấu hình API Key. Hãy nhập API Key trong phần Cài đặt của trang web." }
+      });
+    }
 
     const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+        "Authorization": `Bearer ${apiKey.trim()}`
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "Bạn là một giáo viên tiếng Thụy Điển chuyên nghiệp. Hãy kiểm tra ngữ pháp và từ vựng trong bài viết của người dùng và nhận xét bằng tiếng Việt." },
+          { role: "system", content: "Bạn là một giáo viên tiếng Thụy Điển chuyên nghiệp. Hãy kiểm tra ngữ pháp và từ vựng trong bài viết của người dùng và nhận xét chi tiết bằng tiếng Việt." },
           { role: "user", content: prompt }
         ],
-        max_tokens: maxTokens || 1024
+        max_tokens: maxTokens || 2048
       })
     });
 

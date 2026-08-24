@@ -19,7 +19,7 @@ export default function App() {
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    };
 
     useEffect(() => {
         async function init() {
@@ -29,12 +29,10 @@ export default function App() {
             setVocab(allVocab);
             setTags(allTags);
 
-            // Audio prefetch
             if (allVocab.length > 0) {
                 prefetchAllAudio(allVocab);
             }
 
-            // Simple streak logic
             const lastStudy = localStorage.getItem("puniya_last_study_2");
             const savedStreak = parseInt(localStorage.getItem("puniya_streak_2") || "1");
             const today = new Date().toDateString();
@@ -61,7 +59,6 @@ export default function App() {
         init();
     }, []);
 
-    // Setup Push Notifications
     useEffect(() => {
         let intervalId;
         const checkNotif = async () => {
@@ -74,7 +71,7 @@ export default function App() {
                     const allVocab = await dbGetAll("vocab");
                     if (allVocab.length > 0) {
                         const word = allVocab[Math.floor(Math.random() * allVocab.length)];
-                        new Notification("Puniya - Ôn bài nào! 🌟", {
+                        new Notification("Puniya - Ôn bài nào! 🌸", {
                             body: `Bạn còn nhớ từ "${word.sv}" nghĩa là "${word.vi}" không?`,
                             icon: "/hachiware.png"
                         });
@@ -103,13 +100,11 @@ export default function App() {
 
     async function handleImport(newVocab, newStreak, newTags = []) {
         setLoading(true);
-        // Clean old DB
         const oldV = await dbGetAll("vocab");
         for (const v of oldV) await dbDelete("vocab", v.id);
         const oldT = await dbGetAll("tags");
         for (const t of oldT) await dbDelete("tags", t.id);
 
-        // Add new vocab
         const importedV = [];
         for (const v of newVocab) {
             const { id: _, ...rest } = v;
@@ -117,7 +112,6 @@ export default function App() {
             importedV.push({ ...rest, id: newId });
         }
 
-        // Add new tags
         const importedT = [];
         for (const t of newTags) {
             const { id: _, ...rest } = t;
@@ -135,8 +129,8 @@ export default function App() {
     if (loading) {
         return (
             <div className="loader-wrap">
-                <div className="loader">✿</div>
-                <div style={{ marginTop: 20, fontSize: 18, fontWeight: 900, color: "#ec4899" }}>Puniya is loading...</div>
+                <div className="loader">🌸</div>
+                <div style={{ marginTop: 16, fontSize: 16, fontWeight: 900, color: "#FF6B9D" }}>Đang tải Puniya...</div>
             </div>
         );
     }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { T } from "../constants/theme";
 import { MATEMATIK } from "../constants/matematik";
 import { LatexBlock } from "../components/MathRender";
+import { SubHeader } from "../components/SubHeader";
 
 export default function MatematikPage({ onBack }) {
     const [cat, setCat] = useState("Tất cả");
@@ -13,12 +14,13 @@ export default function MatematikPage({ onBack }) {
 
     return (
         <div className="main">
-            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 11 }}>
-                <button className="btn btn-s" style={{ fontSize: 12, padding: "5px 12px" }} onClick={onBack}>
-                    ← Trang chủ
-                </button>
-                <div className="sec-title" style={{ marginBottom: 0 }}>🔢 Toán học</div>
-            </div>
+            <SubHeader
+                title="Toán học (Matematik)"
+                icon="fa-solid fa-calculator"
+                iconColor="#3B82F6"
+                iconBg="#EFF6FF"
+                onBack={onBack}
+            />
 
             <div className="tabs">
                 {cats.map((c) => (
@@ -34,14 +36,19 @@ export default function MatematikPage({ onBack }) {
                         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                         onClick={() => setExpanded(expanded === m.id ? null : m.id)}
                     >
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <span style={{ fontSize: 20 }}>{m.emoji}</span>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EEF2FF", color: "#3B82F6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                                <i className="fa-solid fa-square-root-variable"></i>
+                            </div>
                             <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, color: T.textL, textTransform: "uppercase", letterSpacing: 0.5 }}>{m.area} · {m.klass}</div>
                                 <div style={{ fontSize: 16, fontWeight: 900, color: T.text }}>{m.title}</div>
                             </div>
                         </div>
-                        <div style={{ fontSize: 13, color: T.pink }}>{expanded === m.id ? "Thu gọn ▲" : "Chi tiết ▼"}</div>
+                        <div style={{ fontSize: 13, color: T.pink, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>{expanded === m.id ? "Thu gọn" : "Chi tiết"}</span>
+                            <i className={expanded === m.id ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down"}></i>
+                        </div>
                     </div>
 
                     {expanded === m.id && (
@@ -50,7 +57,9 @@ export default function MatematikPage({ onBack }) {
 
                             {m.formulas && m.formulas.length > 0 && (
                                 <div style={{ marginBottom: 14 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.pink, marginBottom: 7, textTransform: "uppercase" }}>Công thức & Khái niệm</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.pink, marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-square-root-variable"></i> Công thức & Khái niệm
+                                    </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                         {m.formulas.map((f, i) => (
                                             <div key={i}><LatexBlock src={f} /></div>
@@ -61,7 +70,9 @@ export default function MatematikPage({ onBack }) {
 
                             {m.examples && m.examples.length > 0 && (
                                 <div style={{ marginBottom: 14 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#3b82f6", marginBottom: 7, textTransform: "uppercase" }}>Ví dụ mẫu</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#3b82f6", marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-lightbulb"></i> Ví dụ mẫu
+                                    </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                         {m.examples.map((ex, i) => (
                                             <div key={i} style={{ padding: "10px 14px", background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe" }}>
@@ -69,7 +80,7 @@ export default function MatematikPage({ onBack }) {
                                                     <LatexBlock src={ex.problem} />
                                                 </div>
                                                 <div style={{ fontSize: 13, color: "#9333ea", fontWeight: 700, background: "rgba(255,255,255,0.6)", padding: "4px 8px", borderRadius: 6 }}>
-                                                    💡 <LatexBlock src={ex.solution} />
+                                                    <LatexBlock src={ex.solution} />
                                                 </div>
                                             </div>
                                         ))}
@@ -79,7 +90,9 @@ export default function MatematikPage({ onBack }) {
 
                             {m.exercises && (
                                 <div>
-                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#059669", marginBottom: 7, textTransform: "uppercase" }}>Bài tập vận dụng</div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: "#059669", marginBottom: 7, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <i className="fa-solid fa-pencil"></i> Bài tập vận dụng
+                                    </div>
                                     {m.exercises.map((ex, i) => {
                                         const key = `${m.id}-${i}`;
                                         return (

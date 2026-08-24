@@ -19,46 +19,33 @@ const markedInstance = new Marked(
 // CONSTANTS & MODELS
 // ============================================================
 const GROQ_MODELS = [
+    { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "128k", ctx_val: 131072, desc: "Mạnh nhất, thông minh & đa năng" },
+    { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B", context: "128k", ctx_val: 131072, desc: "Tốc độ siêu nhanh, phản hồi tức thì" },
     { id: "moonshotai/kimi-k2-instruct-0905", name: "Kimi K2 Instruct", context: "256k", ctx_val: 262144, desc: "Đỉnh cao context, nhớ cực lâu" },
     { id: "moonshotai/kimi-k2-instruct", name: "Kimi K2 Standard", context: "128k", ctx_val: 128000, desc: "Dòng Kimi cơ bản, ổn định" },
-    { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B", context: "128k", ctx_val: 131072, desc: "Mạnh nhất, thông minh & đa năng" },
-    { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "128k", ctx_val: 131072, desc: "Mạnh mẽ về lập trình & toán học" },
+    { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "128k", ctx_val: 131072, desc: "Mạnh mẽ về lập trình & từ vựng" },
     { id: "openai/gpt-oss-120b", name: "GPT OSS 120B", context: "128k", ctx_val: 131072, desc: "Siêu trí tuệ mã nguồn mở" },
-    { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout", context: "128k", ctx_val: 131072, desc: "Bản Preview công nghệ Meta" },
-    { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B", context: "128k", ctx_val: 131072, desc: "Tốc độ siêu nhanh, phản hồi tức thì" },
     { id: "groq/compound", name: "Groq Compound", context: "128k", ctx_val: 131072, desc: "Sứ giả thông minh & linh hoạt" },
     { id: "groq/compound-mini", name: "Groq Mini", context: "128k", ctx_val: 131072, desc: "Gọn nhẹ, tối ưu cho hội thoại" },
-    { id: "openai/gpt-oss-20b", name: "GPT OSS 20B", context: "128k", ctx_val: 131072, desc: "Mã nguồn mở cân bằng" },
-    { id: "openai/gpt-oss-safeguard-20b", name: "GPT OSS Safeguard", context: "128k", ctx_val: 131072, desc: "Phiên bản bảo mật nâng cao" },
-    { id: "meta-llama/llama-guard-4-12b", name: "Llama Guard 4", context: "128k", ctx_val: 131072, desc: "Model chuyên về an toàn nội dung" },
-    { id: "canopylabs/orpheus-v1-english", name: "Orpheus English", context: "4k", ctx_val: 4000, desc: "Model chuyên dụng tiếng Anh" }
+    { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout", context: "128k", ctx_val: 131072, desc: "Bản Preview công nghệ Meta" },
 ];
 
 const DEFAULT_MODEL = GROQ_MODELS[0].id;
 const BOT_AVATAR = "/hachiware.png";
 
 const SYSTEM_PROMPT = `Bạn là Puniya AI — trợ lý học tiếng Thuỵ Điển cho người Việt.
-QUY TẮC: Bạn là trợ lý ảo của Phương (Nước Sôi Ấm Áp). Luôn thân thiện, dùng emoji nhưng KHÔNG được dùng icon lá cờ hay biểu tượng quốc gia. 
-BẮT BUỘC: Luôn luôn trả lời và giải thích bằng tiếng Việt 100%. Giải thích từ vựng kỹ (Nghĩa, IPA, Ví dụ). KHÔNG trả lời lạc đề ngoài việc học tiếng hoặc trang web Puniya.
+QUY TẮC: Bạn là trợ lý ảo của Phương (Nước Sôi Ấm Áp). Luôn thân thiện, ngọt ngào, đáng yêu.
+BẮT BUỘC: Luôn luôn trả lời và giải thích bằng tiếng Việt 100%. Giải thích từ vựng kỹ (Nghĩa, IPA, Ngữ pháp, Ví dụ thực tế). Giúp luyện phản xạ tiếng Thụy Điển tự nhiên.
 
 GIAO DIỆN HỘI THOẠI:
-- Nếu câu trả lời của bạn quá dài (nhiều phần kiến thức khác nhau), hãy chèn ký tự [SPLIT] ở giữa các phần để hệ thống tự động tách thành nhiều tin nhắn cho Phương dễ đọc.
-- Đừng dùng [SPLIT] quá lạm dụng, chỉ dùng khi nội dung thực sự dài hoặc chuyển sang một chủ đề kiến thức mới.`;
+- Nếu câu trả lời quá dài (nhiều phần kiến thức khác nhau), hãy chèn ký tự [SPLIT] ở giữa các phần để hệ thống tự động tách thành nhiều tin nhắn cho Phương dễ đọc.
+- Đừng lạm dụng [SPLIT], chỉ dùng khi cần tách ý rõ ràng.`;
 
-// ============================================================
-// HELPERS
-// ============================================================
 function formatMessage(text) {
     if (!text) return "";
     try {
-        // Hỗ trợ Discord-style Underline: __text__ -> <u>text</u>
         let processedText = text.replace(/__(.*?)__/g, '<u>$1</u>');
-        
-        const html = markedInstance.parse(processedText, {
-            breaks: true,
-            gfm: true
-        });
-        return html;
+        return markedInstance.parse(processedText, { breaks: true, gfm: true });
     } catch (e) {
         console.error("Markdown parse error:", e);
         return text.replace(/\n/g, '<br/>');
@@ -72,20 +59,26 @@ const RenameModal = ({ isOpen, onClose, currentName, onSave }) => {
     return (
         <div className="p-ovl" onClick={onClose} style={{ zIndex: 100000 }}>
             <div className="p-modal-card" onClick={e => e.stopPropagation()}>
-                <h3 className="chat-modal-t">Đổi tên nha Phương ✏️</h3>
-                <input className="chat-modal-input" value={val} onChange={e => setVal(e.target.value)} autoFocus />
+                <h3 className="chat-modal-t">
+                    <i className="fa-solid fa-pen-to-square" style={{ color: "#FF6B9D", marginRight: 8 }}></i>
+                    Đổi tên đoạn chat
+                </h3>
+                <input
+                    className="chat-modal-input"
+                    value={val}
+                    onChange={e => setVal(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && val.trim()) { onSave(val); onClose(); } }}
+                    autoFocus
+                />
                 <div className="chat-modal-btns">
                     <button className="chat-modal-btn-c" onClick={onClose}>Huỷ</button>
-                    <button className="chat-modal-btn-s" onClick={() => { onSave(val); onClose(); }}>Lưu luôn</button>
+                    <button className="chat-modal-btn-s" onClick={() => { onSave(val); onClose(); }}>Lưu</button>
                 </div>
             </div>
         </div>
     );
 };
 
-// ============================================================
-// MAIN COMPONENT
-// ============================================================
 export default function AIChatPage({ vocab }) {
     const [threads, setThreads] = useState(() => {
         try {
@@ -127,7 +120,7 @@ export default function AIChatPage({ vocab }) {
     const handlePointerMove = (e) => {
         if (!isResizing) return;
         let newWidth = e.clientX;
-        const maxW = window.innerWidth * 0.25;
+        const maxW = window.innerWidth * 0.35;
         if (newWidth < 220) newWidth = 220;
         if (newWidth > maxW) newWidth = maxW;
         setSidebarWidth(newWidth);
@@ -150,7 +143,7 @@ export default function AIChatPage({ vocab }) {
     useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [thread.messages, loading]);
 
     const dynamicSuggestions = useMemo(() => {
-        const base = ["Dạy tớ cách chào hỏi tự nhiên 🌸", "Luyện nói một đoạn hội thoại cơ bản!"];
+        const base = ["Dạy tớ cách chào hỏi tự nhiên 🌸", "Luyện nói một đoạn hội thoại cơ bản!", "Giải thích ngữ pháp En và Ett", "10 từ vựng Thụy Điển thông dụng nhất"];
         if (vocab && vocab.length > 0) {
             const lastWords = vocab.slice(-3);
             lastWords.forEach(w => base.unshift(`Dạy tớ cách dùng từ '${w.word || w.sv}' nhé!`));
@@ -165,12 +158,12 @@ export default function AIChatPage({ vocab }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "llama-3.1-8b-instant",
-                    systemPrompt: "Bạn là trợ lý giúp đặt tiêu đề cho đoạn hội thoại. Hãy dựa vào nội dung người dùng hỏi để đặt một tiêu đề cực kỳ ngắn gọn (tối đa 5 từ), súc tích, phản ánh đúng chủ đề. Không dùng dấu ngoặc kép, không dùng 'Tiêu đề:', chỉ trả về mỗi tiêu đề thôi. Trả về tiếng Việt.",
-                    messages: [{ role: "user", content: `Đặt tiêu đề cho câu hỏi này: ${firstMsg}` }]
+                    systemPrompt: "Bạn là trợ lý giúp đặt tiêu đề cho đoạn hội thoại. Đặt một tiêu đề cực kỳ ngắn gọn (tối đa 5 từ), súc tích. Không dùng dấu ngoặc kép. Trả về tiếng Việt.",
+                    messages: [{ role: "user", content: `Đặt tiêu đề: ${firstMsg}` }]
                 })
             });
             const data = await res.json();
-            let title = data.choices[0].message.content.replace(/["'✨🧸]/g, "").trim();
+            let title = data.choices?.[0]?.message?.content?.replace(/["'✨🧸]/g, "")?.trim();
             if (title && title.length < 50) {
                 setThreads(ts => ts.map(t => t.id === id ? { ...t, title } : t));
             }
@@ -188,202 +181,253 @@ export default function AIChatPage({ vocab }) {
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = "inherit";
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
         }
     }, [input]);
 
-    // Model Migration Logic for decommissioned models
-    useEffect(() => {
-        const needsMigration = threads.some(t => !GROQ_MODELS.find(m => m.id === t.model));
-        if (needsMigration) {
-            setThreads(ts => ts.map(t => {
-                const exists = GROQ_MODELS.find(m => m.id === t.model);
-                if (!exists) return { ...t, model: DEFAULT_MODEL };
-                return t;
-            }));
-        }
-    }, [threads]);
-
-    const handleNew = () => {
-        const id = Date.now();
-        const nt = { id, title: "Đoạn chat mới", model: DEFAULT_MODEL, messages: [] };
-        setThreads(ts => [nt, ...ts]);
-        setActiveId(id);
-        setSidebarOpen(false);
+    const handleCreateThread = () => {
+        const newT = {
+            id: Date.now(),
+            title: "Đoạn chat mới",
+            model: thread.model || DEFAULT_MODEL,
+            messages: []
+        };
+        setThreads(ts => [newT, ...ts]);
+        setActiveId(newT.id);
+        if (window.innerWidth <= 768) setSidebarOpen(false);
     };
 
     const handleDelete = (id) => {
-        if (threads.length === 1) return;
-        const filtered = threads.filter(t => t.id !== id);
-        setThreads(filtered);
-        if (activeId === id) setActiveId(filtered[0].id);
+        setThreads(ts => {
+            const rest = ts.filter(t => t.id !== id);
+            if (rest.length === 0) {
+                const init = [{ id: Date.now(), title: "Đoạn chat mới", model: DEFAULT_MODEL, messages: [] }];
+                setActiveId(init[0].id);
+                return init;
+            }
+            if (activeId === id) setActiveId(rest[0].id);
+            return rest;
+        });
     };
 
-    async function onSend(customText) {
-        const msgText = (typeof customText === 'string' ? customText : input).trim();
-        if (!msgText || loading) return;
-        const nowMs = Date.now();
-        const nextMsgs = [...thread.messages, { role: "user", content: msgText, timestamp: nowMs }];
-        setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: nextMsgs } : t));
-        setInput("");
-        setLoading(true);
+    const handleSendApi = async (messagesToSend, modelId) => {
+        const customGroqKey = localStorage.getItem("puniya_custom_groq_key") || "";
+        const customOpenaiKey = localStorage.getItem("puniya_custom_openai_key") || "";
 
         try {
-            const history = nextMsgs.slice(-10).map(m => ({ role: m.role || "user", content: m.content }));
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ model: thread.model, systemPrompt: SYSTEM_PROMPT, messages: history })
+                body: JSON.stringify({
+                    model: modelId || DEFAULT_MODEL,
+                    systemPrompt: SYSTEM_PROMPT,
+                    messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                    apiKey: customGroqKey || customOpenaiKey || undefined
+                })
             });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error.message || "API Error");
-            const reply = data.choices[0].message.content;
-            const usage = data.usage?.total_tokens || 0;
 
-            // Xử lý tách tin nhắn (Split)
-            const parts = reply.split("[SPLIT]").map(p => p.trim()).filter(Boolean);
-            const newAssistantMsgs = parts.map((content, idx) => ({
-                role: "assistant",
-                content,
-                model: thread.model,
-                timestamp: Date.now() + idx
-            }));
+            if (res.ok) {
+                const data = await res.json();
+                const content = data.choices?.[0]?.message?.content;
+                if (content) return content;
+            }
+        } catch (err) {
+            console.warn("Backend API error, trying client fallback...", err);
+        }
 
-            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, lastUsage: usage, messages: [...nextMsgs, ...newAssistantMsgs] } : t));
+        if (customGroqKey) {
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${customGroqKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelId || "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: SYSTEM_PROMPT },
+                            ...messagesToSend.map(m => ({ role: m.role, content: m.content }))
+                        ]
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.choices?.[0]?.message?.content;
+                }
+            } catch (e) {
+                console.error("Direct Groq error:", e);
+            }
+        }
 
-            // Tự động cập nhật tiêu đề nếu là tin nhắn đầu tiên
-            if (nextMsgs.length === 1 && (thread.title === "Đoạn chat mới" || thread.title.includes("Nhật ký"))) {
-                generateAutoTitle(activeId, msgText);
+        return "Xin chào Phương! Hệ thống AI đang tạm thời được bảo trì đường truyền. Bạn có thể thêm API Key riêng trong phần **Cài đặt** để chat không giới hạn nhé! 🌸";
+    };
+
+    const onSend = async (customText) => {
+        const text = customText || input;
+        if (!text.trim() || loading) return;
+
+        const userMsg = { role: "user", content: text.trim(), timestamp: Date.now() };
+        const updatedMsgs = [...thread.messages, userMsg];
+
+        setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: updatedMsgs } : t));
+        if (!customText) setInput("");
+        setLoading(true);
+
+        if (thread.messages.length === 0) {
+            generateAutoTitle(activeId, text.trim());
+        }
+
+        try {
+            const rawResponse = await handleSendApi(updatedMsgs, thread.model);
+            const parts = rawResponse.split("[SPLIT]").map(p => p.trim()).filter(Boolean);
+
+            if (parts.length > 1) {
+                let currentList = [...updatedMsgs];
+                for (let i = 0; i < parts.length; i++) {
+                    const botMsg = { role: "assistant", content: parts[i], timestamp: Date.now(), model: thread.model };
+                    currentList = [...currentList, botMsg];
+                    setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: currentList } : t));
+                    if (i < parts.length - 1) {
+                        await new Promise(r => setTimeout(r, 600));
+                    }
+                }
+            } else {
+                const botMsg = { role: "assistant", content: rawResponse, timestamp: Date.now(), model: thread.model };
+                setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: [...updatedMsgs, botMsg] } : t));
             }
         } catch (err) {
             console.error(err);
-            const errMsg = err.message?.toLowerCase().includes("model") ? `⚠️ Model ${thread.model} không khả dụng rồi Phương ơi! Thử cái khác nha 🌸` : "⚠️ Phương ơi, có lỗi gì đó rồi! Thử lại nha 🌸";
-            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: [...nextMsgs, { role: "assistant", content: errMsg, timestamp: Date.now() }] } : t));
-        } finally { setLoading(false); }
-    }
-
-    const saveEdit = async (i) => {
-        const newText = editText.trim();
-        if (!newText) {
-            setEditingIndex(null);
-            return;
+            const errorMsg = { role: "assistant", content: "Ôi có chút lỗi kết nối rồi nè Phương ơi. Bạn thử lại nhé! 🌸", timestamp: Date.now() };
+            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: [...updatedMsgs, errorMsg] } : t));
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const saveEdit = async (idx) => {
+        if (!editText.trim()) return;
+        const newMsgs = thread.messages.slice(0, idx);
+        newMsgs.push({ role: "user", content: editText.trim(), timestamp: Date.now() });
+
+        setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: newMsgs } : t));
         setEditingIndex(null);
-
-        const nowMs = Date.now();
-        const nextMsgs = thread.messages.slice(0, i);
-        nextMsgs.push({ role: "user", content: newText, timestamp: nowMs });
-
-        setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: nextMsgs } : t));
         setLoading(true);
 
         try {
-            const history = nextMsgs.slice(-10).map(m => ({ role: m.role || "user", content: m.content }));
-            const res = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ model: thread.model, systemPrompt: SYSTEM_PROMPT, messages: history })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error.message || "API Error");
-            const reply = data.choices[0].message.content;
-            const usage = data.usage?.total_tokens || 0;
-
-            const parts = reply.split("[SPLIT]").map(p => p.trim()).filter(Boolean);
-            const newAssistantMsgs = parts.map((content, idx) => ({
-                role: "assistant",
-                content,
-                model: thread.model,
-                timestamp: Date.now() + idx
-            }));
-
-            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, lastUsage: usage, messages: [...nextMsgs, ...newAssistantMsgs] } : t));
+            const rawResponse = await handleSendApi(newMsgs, thread.model);
+            const botMsg = { role: "assistant", content: rawResponse, timestamp: Date.now(), model: thread.model };
+            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: [...newMsgs, botMsg] } : t));
         } catch (err) {
             console.error(err);
-            const errMsg = err.message?.toLowerCase().includes("model") ? `⚠️ Model ${thread.model} không khả dụng rồi Phương ơi! Thử cái khác nha 🌸` : "⚠️ Phương ơi, có lỗi gì đó rồi! Thử lại nha 🌸";
-            setThreads(ts => ts.map(t => t.id === activeId ? { ...t, messages: [...nextMsgs, { role: "assistant", content: errMsg, timestamp: Date.now() }] } : t));
-        } finally { setLoading(false); }
-    };
-
-    const getUsedTokens = () => {
-        if (thread?.lastUsage) return thread.lastUsage;
-        if (!thread?.messages || thread.messages.length === 0) return 0;
-        const history = thread.messages.slice(-10);
-        const txt = history.map(m => m.content).join(" ");
-        const chars = txt.length + SYSTEM_PROMPT.length;
-        return Math.floor(chars / 3.5) || 1;
-    };
-
-    const renderQuota = (maxK) => {
-        const t = getUsedTokens();
-        let display = t;
-        if (t >= 1000) display = (t / 1000).toFixed(1) + "k";
-        return `${display}/${maxK}`;
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="chat-root" style={{ userSelect: isResizing ? "none" : "auto" }} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
-            {sidebarOpen && <div className="chat-side-ovl" onPointerDown={() => setSidebarOpen(false)} onClick={() => setSidebarOpen(false)} />}
-
+        <div className="chat-root" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
+            {sidebarOpen && <div className="chat-side-ovl" onClick={() => setSidebarOpen(false)} />}
+            
+            {/* Sidebar */}
             <div className={`chat-side ${sidebarOpen ? "active" : ""}`} style={{ width: window.innerWidth > 768 ? sidebarWidth : undefined }}>
-                <div className="chat-resizer" onPointerDown={(e) => { e.preventDefault(); e.target.setPointerCapture(e.pointerId); setIsResizing(true); }} />
                 <div className="chat-side-head">
-                    <button className="chat-side-new" onClick={handleNew}>➕ Thêm đoạn chat mới</button>
-                    <button className="chat-side-close" onPointerDown={() => setSidebarOpen(false)} onClick={() => setSidebarOpen(false)}>×</button>
+                    <button className="chat-side-new" onClick={handleCreateThread}>
+                        <i className="fa-solid fa-plus"></i>
+                        <span>Đoạn chat mới</span>
+                    </button>
                 </div>
                 <div className="chat-side-body scrollable">
-                    <p className="chat-side-label">LỊCH SỬ CHAT</p>
+                    <div className="chat-side-label">Lịch sử chat</div>
                     {threads.map(t => (
-                        <div key={t.id} className={`chat-side-item ${t.id === activeId ? "active" : ""}`}
+                        <div
+                            key={t.id}
+                            className={`chat-side-item ${t.id === activeId ? "active" : ""}`}
                             onClick={() => { setActiveId(t.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
-                            onPointerDown={() => handleTouchStart(t.id, t.title)}
-                            onPointerUp={handleTouchEnd} onPointerMove={handleTouchEnd} onPointerCancel={handleTouchEnd}
-                            onContextMenu={(e) => { if (window.innerWidth <= 768) e.preventDefault(); }}
+                            onDoubleClick={() => setRenameState({ open: true, id: t.id, name: t.title })}
+                            onTouchStart={() => handleTouchStart(t.id, t.title)}
+                            onTouchEnd={handleTouchEnd}
+                            title="Nhấp đúp chuột để đổi tên"
                         >
-                            <span className="chat-side-t">🧸 {t.title}</span>
+                            <span className="chat-side-t">{t.title}</span>
                             <div className="chat-side-actions">
-                                <button className="chat-side-edit" title="Chỉnh sửa" onClick={(e) => { e.stopPropagation(); setRenameState({ open: true, id: t.id, name: t.title }); }}>✏️</button>
-                                <button className="chat-side-trash" title="Xóa" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }}>
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.8"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" /></svg>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setRenameState({ open: true, id: t.id, name: t.title }); }}
+                                    title="Đổi tên đoạn chat"
+                                >
+                                    <i className="fa-solid fa-pen-to-square" style={{ fontSize: 13, color: "#855C75" }}></i>
+                                </button>
+                                <button
+                                    className="chat-side-trash"
+                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }}
+                                    title="Xóa đoạn chat"
+                                >
+                                    <i className="fa-solid fa-trash-can" style={{ fontSize: 13 }}></i>
                                 </button>
                             </div>
                         </div>
                     ))}
                 </div>
+                {window.innerWidth > 768 && (
+                    <div
+                        className="chat-resizer"
+                        onPointerDown={(e) => {
+                            setIsResizing(true);
+                            e.target.setPointerCapture(e.pointerId);
+                        }}
+                    />
+                )}
             </div>
 
+            {/* Chat Area */}
             <div className="chat-main">
                 <div className="chat-header">
-                    <button className="chat-burger" onClick={() => setSidebarOpen(true)}>☰</button>
-                    <div className="chat-head-info">
-                        <span className="chat-head-name">🧸 {thread.title}</span>
-                        <div className="chat-head-model-wrap" ref={pickerRef}>
-                            <button className="chat-head-pill" onClick={() => setShowModels(!showModels)}>
-                                <strong>{GROQ_MODELS.find(m => m.id === thread.model)?.name}</strong>
-                                <i>▼</i>
-                            </button>
-                            {showModels && (
-                                <div className="chat-head-drop-container">
-                                    <div className="chat-head-drop-ovl" onClick={() => setShowModels(false)} />
-                                    <div className="chat-head-drop">
-                                        <div className="chat-head-drop-head">Chọn Model AI ✨</div>
-                                        <div className="chat-head-drop-list scrollable">
-                                            {GROQ_MODELS.map(m => {
-                                                const currentTokens = getUsedTokens();
-                                                const isExceeded = currentTokens >= (m.ctx_val || 0);
-                                                if (isExceeded) return null;
-                                                return (
-                                                    <button key={m.id} className={`chat-head-opt ${thread.model === m.id ? "active" : ""}`} onClick={() => { setThreads(ts => ts.map(t => t.id === activeId ? { ...t, model: m.id } : t)); setShowModels(false); }}>
-                                                        <div className="chat-opt-t"><b>{m.name}</b><span>{renderQuota(m.context)}</span></div>
-                                                        <p className="chat-opt-d">{m.desc}</p>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <button className="chat-burger" onClick={() => setSidebarOpen(!sidebarOpen)} title="Mở danh sách đoạn chat">
+                            <i className="fa-solid fa-bars"></i>
+                        </button>
+                        <span
+                            className="chat-head-name"
+                            onDoubleClick={() => setRenameState({ open: true, id: thread.id, name: thread.title })}
+                            style={{ cursor: "pointer" }}
+                            title="Nhấp đúp chuột để đổi tên"
+                        >
+                            {thread.title}
+                        </span>
+                    </div>
+
+                    <div className="chat-head-model-wrap" ref={pickerRef}>
+                        <button className="chat-head-pill" onClick={() => setShowModels(!showModels)}>
+                            <i className="fa-solid fa-robot" style={{ color: "#FF6B9D", fontSize: 13 }}></i>
+                            <strong>{GROQ_MODELS.find(m => m.id === thread.model)?.name || "Llama 3.3 70B"}</strong>
+                            <i className="fa-solid fa-chevron-down" style={{ fontSize: 10, color: "#FF6B9D" }}></i>
+                        </button>
+                        {showModels && (
+                            <>
+                                <div className="chat-head-drop-ovl" onClick={() => setShowModels(false)} />
+                                <div className="chat-head-drop">
+                                    <div className="chat-head-drop-head">Chọn Model AI 🌸</div>
+                                    <div className="chat-head-drop-list scrollable">
+                                        {GROQ_MODELS.map(m => (
+                                            <button
+                                                key={m.id}
+                                                className={`chat-head-opt ${thread.model === m.id ? "active" : ""}`}
+                                                onClick={() => {
+                                                    setThreads(ts => ts.map(t => t.id === activeId ? { ...t, model: m.id } : t));
+                                                    setShowModels(false);
+                                                }}
+                                            >
+                                                <div className="chat-opt-t">
+                                                    <b>{m.name}</b>
+                                                    <span>{m.context}</span>
+                                                </div>
+                                                <p className="chat-opt-d">{m.desc}</p>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -405,39 +449,60 @@ export default function AIChatPage({ vocab }) {
                                 <div key={i} className={`chat-row ${m.role === 'user' ? 'u' : 'b'}`}>
                                     {m.role === 'assistant' && <img src={BOT_AVATAR} className="chat-ava" alt="bot" />}
                                     <div className={`chat-msg-ctx ${editingIndex === i ? "editing" : ""}`}>
-                                        <div className="chat-bub">
-                                            {m.role === 'user' && editingIndex === i ? (
-                                                <div className="chat-edit-box">
-                                                    <textarea autoFocus value={editText} onChange={e => setEditText(e.target.value)} rows="3" />
-                                                    <div className="chat-ebtns">
-                                                        <button className="c" onClick={() => setEditingIndex(null)}>Hủy</button>
-                                                        <button className="s" onClick={() => saveEdit(i)}>Lưu & Gửi</button>
-                                                    </div>
+                                        {m.role === 'user' && editingIndex === i ? (
+                                            <div className="chat-edit-card">
+                                                <div style={{ fontSize: 12, fontWeight: 800, color: "#FF6B9D", marginBottom: 6 }}>
+                                                    <i className="fa-solid fa-pen-to-square" style={{ marginRight: 5 }}></i>
+                                                    Chỉnh sửa tin nhắn
                                                 </div>
-                                            ) : (
-                                                <>
+                                                <textarea
+                                                    autoFocus
+                                                    value={editText}
+                                                    onChange={e => setEditText(e.target.value)}
+                                                    rows="3"
+                                                />
+                                                <div className="chat-ebtns">
+                                                    <button className="c" onClick={() => setEditingIndex(null)}>Hủy</button>
+                                                    <button className="s" onClick={() => saveEdit(i)}>
+                                                        <i className="fa-solid fa-paper-plane" style={{ marginRight: 4 }}></i>
+                                                        Lưu & Gửi lại
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="chat-bub">
                                                     {m.role === 'assistant' ? (
                                                         <div dangerouslySetInnerHTML={{ __html: formatMessage(m.content) }} />
                                                     ) : (
                                                         <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
                                                     )}
                                                     {m.role === 'user' && editingIndex !== i && (
-                                                        <button className="chat-msg-edit" onClick={() => { setEditingIndex(i); setEditText(m.content); }}>
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                                        <button
+                                                            className="chat-msg-edit"
+                                                            onClick={() => { setEditingIndex(i); setEditText(m.content); }}
+                                                            title="Chỉnh sửa câu hỏi này"
+                                                        >
+                                                            <i className="fa-solid fa-pen"></i>
                                                         </button>
                                                     )}
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="chat-footer-info">
-                                            {m.timestamp && <span className="chat-time">{new Date(m.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - {new Date(m.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}
-                                            {m.role === 'assistant' && m.model && <span className="chat-bot-tag">{GROQ_MODELS.find(gm => gm.id === m.model)?.name}</span>}
-                                        </div>
+                                                </div>
+                                                <div className="chat-footer-info">
+                                                    {m.timestamp && <span className="chat-time">{new Date(m.timestamp).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>}
+                                                    {m.role === 'assistant' && m.model && <span className="chat-bot-tag">{GROQ_MODELS.find(gm => gm.id === m.model)?.name || "AI"}</span>}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
                             {loading && (
-                                <div className="chat-row b"><img src={BOT_AVATAR} className="chat-ava" alt="bot" /><div className="chat-bub wait">...</div></div>
+                                <div className="chat-row b">
+                                    <img src={BOT_AVATAR} className="chat-ava" alt="bot" />
+                                    <div className="chat-bub wait">
+                                        <div className="dots"><div className="dot" /><div className="dot" /><div className="dot" /></div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
@@ -446,24 +511,41 @@ export default function AIChatPage({ vocab }) {
 
                 <div className="chat-input-zone">
                     <div className="chat-input-wrap">
-                        <textarea ref={textareaRef} rows="1" placeholder="Hãy hỏi gì đó ở đây nì" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSend())} disabled={loading} />
-                        <button className={`chat-send ${input.trim() ? "on" : ""}`} onClick={() => onSend()} disabled={!input.trim() || loading}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <textarea
+                            ref={textareaRef}
+                            rows="1"
+                            placeholder="Nhắn tin với AI..."
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSend())}
+                            disabled={loading}
+                        />
+                        <button className={`chat-send ${input.trim() ? "on" : ""}`} onClick={() => onSend()} disabled={!input.trim() || loading} title="Gửi tin nhắn">
+                            <i className="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <RenameModal isOpen={renameState.open} onClose={() => setRenameState({ open: false, id: null, name: "" })} currentName={renameState.name} onSave={(nn) => setThreads(ts => ts.map(t => t.id === renameState.id ? { ...t, title: nn } : t))} />
+            <RenameModal
+                isOpen={renameState.open}
+                onClose={() => setRenameState({ open: false, id: null, name: "" })}
+                currentName={renameState.name}
+                onSave={(nn) => setThreads(ts => ts.map(t => t.id === renameState.id ? { ...t, title: nn } : t))}
+            />
 
             {mobileOptions.open && (
                 <div className="chat-head-drop-container">
-                    <div className="chat-head-drop-ovl" style={{ background: "rgba(30,20,28,0.65)", backdropFilter: "blur(5px)" }} onClick={() => setMobileOptions({ open: false, id: null, title: "" })} />
-                    <div className="chat-head-drop" style={{ zIndex: 100001, padding: '25px 20px', display: 'flex', flexDirection: 'column' }}>
-                        <div className="chat-head-drop-head" style={{ marginBottom: 15, fontSize: 13 }}>Tùy chọn: {mobileOptions.title}</div>
-                        <button className="chat-opt-btn" onClick={() => { setRenameState({ open: true, id: mobileOptions.id, name: mobileOptions.title }); setMobileOptions({ ...mobileOptions, open: false }); }}>✏️ Đổi tên đoạn chat</button>
-                        <button className="chat-opt-btn" style={{ color: "#FF4D4D" }} onClick={() => { setDeleteConfirm(mobileOptions.id); setMobileOptions({ ...mobileOptions, open: false }); }}>🗑 Xóa đoạn chat</button>
-                        <button className="chat-opt-btn" style={{ justifyContent: "center", background: "#f3f4f6", color: "#888", marginTop: 5 }} onClick={() => setMobileOptions({ ...mobileOptions, open: false })}>Đóng</button>
+                    <div className="chat-head-drop-ovl" style={{ background: "rgba(45,27,45,0.6)", backdropFilter: "blur(6px)" }} onClick={() => setMobileOptions({ open: false, id: null, title: "" })} />
+                    <div className="chat-head-drop" style={{ zIndex: 100001, padding: '24px 20px', display: 'flex', flexDirection: 'column' }}>
+                        <div className="chat-head-drop-head" style={{ marginBottom: 14, fontSize: 13 }}>Tùy chọn: {mobileOptions.title}</div>
+                        <button className="chat-opt-btn" onClick={() => { setRenameState({ open: true, id: mobileOptions.id, name: mobileOptions.title }); setMobileOptions({ ...mobileOptions, open: false }); }}>
+                            <i className="fa-solid fa-pen-to-square" style={{ marginRight: 8 }}></i> Đổi tên đoạn chat
+                        </button>
+                        <button className="chat-opt-btn" style={{ color: "#EF4444" }} onClick={() => { setDeleteConfirm(mobileOptions.id); setMobileOptions({ ...mobileOptions, open: false }); }}>
+                            <i className="fa-solid fa-trash-can" style={{ marginRight: 8 }}></i> Xóa đoạn chat
+                        </button>
+                        <button className="chat-opt-btn" style={{ justifyContent: "center", background: "#F1F5F9", color: "#64748B", marginTop: 6 }} onClick={() => setMobileOptions({ ...mobileOptions, open: false })}>Đóng</button>
                     </div>
                 </div>
             )}
@@ -471,11 +553,18 @@ export default function AIChatPage({ vocab }) {
             {deleteConfirm && (
                 <div className="p-ovl" onClick={() => setDeleteConfirm(null)}>
                     <div className="p-modal-card" onClick={e => e.stopPropagation()}>
-                        <h3 className="chat-modal-t">Xóa đoạn chat này? 🥺</h3>
-                        <div style={{ fontSize: 16, color: "#9B6B8A", fontWeight: 800, marginBottom: 30 }}>Bạn có chắc muốn xóa lịch sử trò chuyện này không? Hành động này không thể hoàn tác.</div>
+                        <h3 className="chat-modal-t">
+                            <i className="fa-solid fa-trash-can" style={{ color: "#EF4444", marginRight: 8 }}></i>
+                            Xóa đoạn chat này?
+                        </h3>
+                        <div style={{ fontSize: 14, color: "#855C75", fontWeight: 600, marginBottom: 24, lineHeight: 1.5 }}>
+                            Bạn có chắc muốn xóa lịch sử trò chuyện này không? Hành động này không thể hoàn tác.
+                        </div>
                         <div className="chat-modal-btns">
                             <button className="chat-modal-btn-c" onClick={() => setDeleteConfirm(null)}>Hủy bỏ</button>
-                            <button className="chat-modal-btn-s" style={{ background: "#FF4D4D", boxShadow: "0 8px 20px rgba(255,107,157,0.3)" }} onClick={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}>Xóa ngay</button>
+                            <button className="chat-modal-btn-s" style={{ background: "#EF4444", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }} onClick={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}>
+                                Xóa ngay
+                            </button>
                         </div>
                     </div>
                 </div>
